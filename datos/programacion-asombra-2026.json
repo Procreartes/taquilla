@@ -1,0 +1,523 @@
+{
+  "_meta": {
+    "edicion": "ASOMBRA 2026",
+    "fuente": "Hoja 'Programa completo festival' final (21/10/2026) + venta oficial de Entradas Canarias",
+    "notas": [
+      "Moneda: EUR. precio = 0 significa gratuito. precio = null significa sin dato.",
+      "hora = null: horario pendiente. ticketUrl = null: enlace de venta pendiente (mostrar 'Entradas próximamente', nunca un botón de compra falso).",
+      "Campos con 'verificar': true deben revisarse antes de publicar.",
+      "precioDesde: true indica precio mínimo ('Desde 11 €'). f01 contrastada con la venta oficial (21/10/2026): 20:00.",
+      "La hoja final dice 20:30 en f01 y f02; manda la venta oficial (20:00) por decisión de la organización (21/10/2026).",
+      "Precios en blanco en la hoja final (Fuerteventura, Holidayworld, El Hierro): null hasta tener venta o dato confirmado.",
+      "Programa: sesión doble en una misma función y entrada (Tejina, El Hierro)."
+    ]
+  },
+  "islas": [
+    {
+      "id": "gran-canaria",
+      "nombre": "Gran Canaria",
+      "estado": "activa",
+      "colores": {
+        "base": "#111116",
+        "acento": "#F52286",
+        "claro": "#FAF8F2"
+      }
+    },
+    {
+      "id": "fuerteventura",
+      "nombre": "Fuerteventura",
+      "estado": "activa",
+      "colores": {
+        "base": "#E7D0B1",
+        "acento": "#2469B0",
+        "claro": "#F7F4EA"
+      }
+    },
+    {
+      "id": "tenerife",
+      "nombre": "Tenerife",
+      "estado": "activa",
+      "colores": {
+        "base": "#30204F",
+        "acento": "#AC74D6",
+        "claro": "#F4A0CD"
+      }
+    },
+    {
+      "id": "lanzarote",
+      "nombre": "Lanzarote",
+      "estado": "activa",
+      "colores": {
+        "base": "#292426",
+        "acento": "#BD5548",
+        "claro": "#F0A36D"
+      }
+    },
+    {
+      "id": "el-hierro",
+      "nombre": "El Hierro",
+      "estado": "activa",
+      "colores": {
+        "base": "#102B28",
+        "acento": "#247B70",
+        "claro": "#C2E1CC"
+      }
+    },
+    {
+      "id": "la-graciosa",
+      "nombre": "La Graciosa",
+      "estado": "activa",
+      "colores": {
+        "base": "#00BED0",
+        "acento": "#FF5096",
+        "claro": "#087D99"
+      }
+    },
+    {
+      "id": "la-palma",
+      "nombre": "La Palma",
+      "estado": "proximamente",
+      "etiqueta": "Próximamente · 2027",
+      "colores": {
+        "base": "#102348",
+        "acento": "#316BB4",
+        "claro": "#A5C9F2"
+      }
+    },
+    {
+      "id": "la-gomera",
+      "nombre": "La Gomera",
+      "estado": "proximamente",
+      "etiqueta": "Próximamente · 2027",
+      "colores": {
+        "base": "#37452D",
+        "acento": "#91A76C",
+        "claro": "#E2CF9E"
+      }
+    }
+  ],
+  "recintos": [
+    {
+      "id": "jesus-arencibia",
+      "nombre": "Centro Cultural Jesús Arencibia",
+      "zona": "Tamaraceite",
+      "municipio": "Las Palmas de Gran Canaria",
+      "isla": "gran-canaria"
+    },
+    {
+      "id": "parque-doramas",
+      "nombre": "Parque Doramas",
+      "municipio": "Las Palmas de Gran Canaria",
+      "isla": "gran-canaria"
+    },
+    {
+      "id": "holidayworld",
+      "nombre": "Holidayworld",
+      "zona": "Maspalomas",
+      "municipio": "San Bartolomé de Tirajana",
+      "isla": "gran-canaria",
+      "verificar": true
+    },
+    {
+      "id": "victor-jara",
+      "nombre": "Teatro Víctor Jara",
+      "zona": "Vecindario",
+      "municipio": "Santa Lucía de Tirajana",
+      "isla": "gran-canaria",
+      "verificar": true
+    },
+    {
+      "id": "auditorio-pdr",
+      "nombre": "Auditorio Insular",
+      "municipio": "Puerto del Rosario",
+      "isla": "fuerteventura"
+    },
+    {
+      "id": "union-tejina",
+      "nombre": "Teatro Unión Tejina",
+      "zona": "Tejina",
+      "municipio": "San Cristóbal de La Laguna",
+      "isla": "tenerife",
+      "verificar": true
+    },
+    {
+      "id": "cine-frontera",
+      "nombre": "Cine Frontera",
+      "municipio": "Frontera",
+      "isla": "el-hierro",
+      "verificar": true
+    },
+    {
+      "id": "multicines-atlantida",
+      "nombre": "Multicines Atlántida",
+      "municipio": null,
+      "isla": "lanzarote",
+      "verificar": true
+    },
+    {
+      "id": "plaza-caleta-sebo",
+      "nombre": "Plaza Caleta de Sebo",
+      "zona": "Caleta de Sebo",
+      "municipio": "Teguise",
+      "isla": "la-graciosa"
+    }
+  ],
+  "artistas": [
+    {
+      "id": "dania-diaz",
+      "nombre": "Dania Díaz",
+      "procedencia": "Venezuela"
+    },
+    {
+      "id": "jorge-luengo",
+      "nombre": "Jorge Luengo",
+      "procedencia": "Madrid"
+    },
+    {
+      "id": "carlos-adriano",
+      "nombre": "Carlos Adriano",
+      "procedencia": "Argentina-Madrid"
+    },
+    {
+      "id": "nano-arranz",
+      "nombre": "Nano Arranz",
+      "procedencia": "Castilla y León"
+    },
+    {
+      "id": "miriam-santana",
+      "nombre": "Miriam Santana",
+      "alias": "Miriam la Maga",
+      "procedencia": "Canarias"
+    },
+    {
+      "id": "hector-sansegundo",
+      "nombre": "Héctor Sansegundo",
+      "procedencia": "Castilla y León"
+    },
+    {
+      "id": "anthony-blake",
+      "nombre": "Anthony Blake",
+      "procedencia": "Asturias"
+    },
+    {
+      "id": "banzo-perdomo",
+      "nombre": "Pepín Banzo y Helena Perdomo",
+      "procedencia": "Cataluña"
+    },
+    {
+      "id": "magic-twins",
+      "nombre": "Magic Twins",
+      "procedencia": "Canarias"
+    },
+    {
+      "id": "francis-zafrilla",
+      "nombre": "Francis Zafrilla",
+      "procedencia": "Castilla-La Mancha"
+    },
+    {
+      "id": "jessica-guloomal",
+      "nombre": "Jessica Guloomal",
+      "procedencia": "Canarias"
+    },
+    {
+      "id": "mago-manu",
+      "nombre": "Mago Manu",
+      "procedencia": "Canarias"
+    },
+    {
+      "id": "jorge-vilar",
+      "nombre": "Jorge Vilar",
+      "procedencia": "Andalucía-Canarias"
+    },
+    {
+      "id": "sergio-encinas",
+      "nombre": "Sergio Encinas",
+      "procedencia": "Castilla y León"
+    },
+    {
+      "id": "hector-mancha",
+      "nombre": "Héctor Mancha",
+      "procedencia": "Canarias"
+    },
+    {
+      "id": "duo-kybalion",
+      "nombre": "Dúo Kybalión",
+      "procedencia": "Rusia-Argentina"
+    },
+    {
+      "id": "amadeo-edama",
+      "nombre": "Amadeo Edama",
+      "procedencia": "La Rioja"
+    }
+  ],
+  "espectaculos": [
+    {
+      "id": "la-maga",
+      "titulo": "La Maga",
+      "artistas": [
+        "dania-diaz"
+      ]
+    },
+    {
+      "id": "hypnotize",
+      "titulo": "T-Hipnotizo",
+      "artistas": [
+        "jorge-luengo"
+      ],
+      "edadMinima": 12,
+      "nota": "Título confirmado por el cartel oficial («T-Hipnotizo»). Hora: la hoja final dice 20:30 y la venta oficial 20:00; manda la venta oficial hasta confirmar."
+    },
+    {
+      "id": "carlos-adriano-doramas",
+      "titulo": "Magia Divertida",
+      "artistas": [
+        "carlos-adriano"
+      ]
+    },
+    {
+      "id": "nano-arranz-doramas",
+      "titulo": "Cómo lo habrá hecho con lo tonto que es",
+      "artistas": [
+        "nano-arranz"
+      ]
+    },
+    {
+      "id": "miriam-santana-show",
+      "titulo": "Magia Familiar",
+      "artistas": [
+        "miriam-santana"
+      ]
+    },
+    {
+      "id": "hector-sansegundo-show",
+      "titulo": "El Último Gran Majo",
+      "artistas": [
+        "hector-sansegundo"
+      ]
+    },
+    {
+      "id": "mas-alla-imaginacion",
+      "titulo": "Más allá de la imaginación",
+      "artistas": [
+        "anthony-blake"
+      ],
+      "edadMinima": 12
+    },
+    {
+      "id": "sesion-tejina",
+      "titulo": null,
+      "artistas": [
+        "banzo-perdomo",
+        "magic-twins"
+      ],
+      "programa": [
+        {
+          "titulo": "Tempos Mágicos",
+          "artista": "banzo-perdomo"
+        },
+        {
+          "titulo": "Maison Magique",
+          "artista": "magic-twins"
+        }
+      ]
+    },
+    {
+      "id": "jessica-magia-en-femenino",
+      "titulo": "Magia en Femenino",
+      "artistas": [
+        "jessica-guloomal"
+      ]
+    },
+    {
+      "id": "mago-manu-show",
+      "titulo": "The Great Mago Manu",
+      "artistas": [
+        "mago-manu"
+      ]
+    },
+    {
+      "id": "zafrilla-boogali",
+      "titulo": "Boogali Boogaloo",
+      "artistas": [
+        "francis-zafrilla"
+      ]
+    },
+    {
+      "id": "sesion-el-hierro",
+      "titulo": null,
+      "artistas": [
+        "jessica-guloomal",
+        "jorge-vilar"
+      ],
+      "programa": [
+        {
+          "titulo": "Magia en Femenino",
+          "artista": "jessica-guloomal"
+        },
+        {
+          "titulo": "Five",
+          "artista": "jorge-vilar"
+        }
+      ]
+    },
+    {
+      "id": "gala-internacional",
+      "titulo": "Gran Gala Internacional ASOMBRA",
+      "tipo": "gala",
+      "artistas": [
+        "sergio-encinas",
+        "hector-mancha",
+        "duo-kybalion",
+        "amadeo-edama"
+      ]
+    }
+  ],
+  "funciones": [
+    {
+      "id": "f01",
+      "espectaculo": "la-maga",
+      "fecha": "2026-11-06",
+      "hora": "20:00",
+      "recinto": "jesus-arencibia",
+      "precio": 11,
+      "ticketUrl": "https://venta.entradascanarias.com/entradascanarias/events/61101",
+      "precioDesde": true
+    },
+    {
+      "id": "f02",
+      "espectaculo": "hypnotize",
+      "fecha": "2026-11-07",
+      "hora": "20:00",
+      "recinto": "jesus-arencibia",
+      "precio": 11,
+      "ticketUrl": "https://venta.entradascanarias.com/entradascanarias/events/61096",
+      "precioDesde": true
+    },
+    {
+      "id": "f03",
+      "espectaculo": "miriam-santana-show",
+      "fecha": "2026-11-08",
+      "hora": "11:00",
+      "recinto": "parque-doramas",
+      "precio": 0,
+      "ticketUrl": null
+    },
+    {
+      "id": "f04",
+      "espectaculo": "nano-arranz-doramas",
+      "fecha": "2026-11-08",
+      "hora": "12:00",
+      "recinto": "parque-doramas",
+      "precio": 0,
+      "ticketUrl": null
+    },
+    {
+      "id": "f05",
+      "espectaculo": "carlos-adriano-doramas",
+      "fecha": "2026-11-08",
+      "hora": "13:00",
+      "recinto": "parque-doramas",
+      "precio": 0,
+      "ticketUrl": null
+    },
+    {
+      "id": "f06",
+      "espectaculo": "sesion-tejina",
+      "fecha": "2026-11-06",
+      "hora": "20:00",
+      "recinto": "union-tejina",
+      "precio": 15,
+      "ticketUrl": null
+    },
+    {
+      "id": "f07",
+      "espectaculo": "hector-sansegundo-show",
+      "fecha": "2026-11-13",
+      "hora": "20:00",
+      "recinto": "auditorio-pdr",
+      "precio": null,
+      "ticketUrl": null
+    },
+    {
+      "id": "f08",
+      "espectaculo": "miriam-santana-show",
+      "fecha": "2026-11-14",
+      "hora": "20:00",
+      "recinto": "plaza-caleta-sebo",
+      "precio": 0,
+      "ticketUrl": null
+    },
+    {
+      "id": "f09",
+      "espectaculo": "jessica-magia-en-femenino",
+      "fecha": "2026-11-21",
+      "hora": "13:00",
+      "recinto": "holidayworld",
+      "precio": null,
+      "ticketUrl": null
+    },
+    {
+      "id": "f10",
+      "espectaculo": "mas-alla-imaginacion",
+      "fecha": "2026-11-28",
+      "hora": "20:00",
+      "recinto": "auditorio-pdr",
+      "precio": null,
+      "ticketUrl": null
+    },
+    {
+      "id": "f11",
+      "espectaculo": "sesion-el-hierro",
+      "fecha": "2026-12-18",
+      "hora": "20:00",
+      "recinto": "cine-frontera",
+      "precio": null,
+      "ticketUrl": null
+    },
+    {
+      "id": "f12",
+      "espectaculo": "gala-internacional",
+      "fecha": "2026-12-18",
+      "hora": "20:00",
+      "recinto": "victor-jara",
+      "precio": 25,
+      "ticketUrl": null
+    },
+    {
+      "id": "f13",
+      "espectaculo": "gala-internacional",
+      "fecha": "2026-12-19",
+      "hora": "20:00",
+      "recinto": "multicines-atlantida",
+      "precio": 25,
+      "ticketUrl": null
+    },
+    {
+      "id": "f14",
+      "espectaculo": "mago-manu-show",
+      "fecha": "2026-11-21",
+      "hora": "17:00",
+      "recinto": "holidayworld",
+      "precio": null,
+      "ticketUrl": null
+    },
+    {
+      "id": "f15",
+      "espectaculo": "zafrilla-boogali",
+      "fecha": "2026-11-21",
+      "hora": "18:00",
+      "recinto": "holidayworld",
+      "precio": null,
+      "ticketUrl": null
+    },
+    {
+      "id": "f16",
+      "espectaculo": "hector-sansegundo-show",
+      "fecha": "2026-11-21",
+      "hora": "19:00",
+      "recinto": "holidayworld",
+      "precio": null,
+      "ticketUrl": null
+    }
+  ]
+}

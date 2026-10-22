@@ -1,0 +1,966 @@
+<title>Taquilla Antigua · Prototipo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+
+/* Layout: cabecera de evento + pestañas; el plano (SVG a escala) manda y el resumen va al lado; en móvil, todo en una columna */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --ink:#131a28; --muted:#5a6478; --line:#d8dde7; --soft:#eef1f6;
+  --accent:#2340b5; --accent-ink:#ffffff; --stage:#131a28; --stage-ink:#f3f5f9;
+  --sold:#cdd2dc; --hold:#e7a43a; --sel:#f5c400; --sel-ink:#131a28;
+  --ok:#0f8a4c; --warn:#a86a12; --bad:#c53030; --okbg:#e3f5ea; --warnbg:#fcf1dd; --badbg:#fbe4e4;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e131d; --surface:#161d2b; --ink:#e8ecf4; --muted:#9aa5ba; --line:#2a3447; --soft:#1c2536;
+  --accent:#7d95ff; --accent-ink:#0e131d; --stage:#e8ecf4; --stage-ink:#0e131d;
+  --sold:#3a4458; --hold:#e0a64a; --sel:#ffd84d; --sel-ink:#131a28;
+  --ok:#4fd08b; --warn:#f0b54f; --bad:#ff7a7a; --okbg:#123826; --warnbg:#3a2c12; --badbg:#3d1a1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e131d; --surface:#161d2b; --ink:#e8ecf4; --muted:#9aa5ba; --line:#2a3447; --soft:#1c2536;
+  --accent:#7d95ff; --accent-ink:#0e131d; --stage:#e8ecf4; --stage-ink:#0e131d;
+  --sold:#3a4458; --hold:#e0a64a; --sel:#ffd84d; --sel-ink:#131a28;
+  --ok:#4fd08b; --warn:#f0b54f; --bad:#ff7a7a; --okbg:#123826; --warnbg:#3a2c12; --badbg:#3d1a1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h2{font-size:20px} h3{font-size:16px}
+.mono{font-family:var(--f-mono)} .muted{color:var(--muted)} .small{font-size:13px}
+.tag{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.tag.demo{border-color:var(--hold);color:var(--warn)}
+header.ev{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:end;padding-bottom:10px;border-bottom:1px solid var(--line)}
+@media (max-width:860px){header.ev{grid-template-columns:1fr}}
+header.ev h1{font-size:clamp(28px,5vw,46px);font-weight:800;letter-spacing:-.02em}
+.ev-meta{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--muted);font-size:14px}
+.ev-meta b{color:var(--ink);font-weight:600}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+nav.tabs button{font:600 14px var(--f-body);background:transparent;color:var(--muted);border:1px solid transparent;padding:8px 14px;border-radius:99px;cursor:pointer}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+nav.tabs button:hover:not([aria-selected="true"]){border-color:var(--line);color:var(--ink)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.ed{display:grid;grid-template-columns:400px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:980px){.two,.ed{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.stack{display:grid;gap:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px 4px 2px 2px;display:inline-block;flex:none}
+.mapbox{overflow-x:auto;border-radius:8px}
+.mapbox svg{display:block;width:100%;min-width:560px;height:auto}
+.mapbox svg [data-c]{cursor:pointer}
+.mapbox svg [data-c]:focus{outline:none}
+.mapbox svg [data-c]:focus-visible rect{stroke:var(--accent);stroke-width:6}
+.tools{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);font-size:14px}
+select,input[type=text],input[type=email],input[type=number],input[type=date],input[type=time],textarea{font:500 15px var(--f-body);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+input[type=number]{font-variant-numeric:tabular-nums}
+input[type=color]{width:38px;height:34px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+textarea{font:400 12px var(--f-mono);min-height:120px}
+select.auto{width:auto}
+.btn{font:700 15px var(--f-body);border:0;border-radius:99px;padding:10px 18px;cursor:pointer;background:var(--accent);color:var(--accent-ink);white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.full{width:100%}
+.icon{border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+.icon:hover{color:var(--bad);background:var(--soft)}
+.zone{display:flex;justify-content:space-between;align-items:center;font-size:14px;gap:10px}
+.zone b{font-variant-numeric:tabular-nums}
+.timer{display:flex;align-items:center;justify-content:space-between;background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 12px;font-weight:700}
+.timer .mono{font-size:18px}
+.lines{display:grid;gap:6px;font-size:14px}
+.line{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
+.line.total{border-top:1px solid var(--line);padding-top:8px;font-weight:700;font-size:17px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 12px var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 7px;display:inline-flex;gap:6px;align-items:center}
+.chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0}
+form{display:grid;gap:10px}
+label.f{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;min-width:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted)}
+.check input{margin-top:3px}
+.stripe{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;background:var(--bg)}
+.stripe .hd{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);gap:8px;flex-wrap:wrap}
+.notice{font-size:13px;border-radius:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.tickets{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.tk{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.tk .top{padding:14px 16px;border-bottom:2px dashed var(--line);display:grid;gap:4px}
+.tk .seatinfo{display:flex;gap:16px;font-size:13px;color:var(--muted)}
+.tk .seatinfo b{display:block;font:700 22px var(--f-display);color:var(--ink)}
+.tk .qr{padding:16px;display:grid;justify-items:center;gap:8px}
+.qrbox{background:#ffffff;padding:10px;border-radius:8px}
+.qrbox img,.qrbox canvas{display:block}
+.bar{height:4px;width:160px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:100%}
+.empty{padding:36px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+.result{border-radius:12px;padding:22px;text-align:center;font:800 26px var(--f-display);min-height:110px;display:grid;place-items:center}
+.result small{display:block;font:500 14px var(--f-body);margin-top:6px}
+.r-idle{background:var(--bg);color:var(--muted);border:1px dashed var(--line)}
+.r-ok{background:var(--okbg);color:var(--ok)}.r-warn{background:var(--warnbg);color:var(--warn)}.r-bad{background:var(--badbg);color:var(--bad)}
+.list{display:grid;gap:6px;max-height:360px;overflow:auto}
+.li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .v{font:800 28px var(--f-display);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.zb{display:grid;grid-template-columns:160px minmax(0,1fr) 130px;gap:12px;align-items:center;font-size:14px}
+@media (max-width:600px){.zb{grid-template-columns:1fr;gap:4px}}
+.track{height:14px;background:var(--bg);border:1px solid var(--line);border-radius:4px;overflow:hidden;display:flex}
+.track i{display:block;height:100%}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tablebox{overflow-x:auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+details.blk{border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+details.blk>summary{cursor:pointer;padding:10px 12px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:center;list-style:none}
+details.blk>summary::-webkit-details-marker{display:none}
+details.blk>summary::before{content:"▸";color:var(--muted);margin-right:6px}
+details.blk[open]>summary::before{content:"▾"}
+.blk-body{padding:0 12px 12px;display:grid;gap:10px}
+.mini{display:grid;gap:6px}
+.mini-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:6px;align-items:center}
+.mini-h{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.zrow{display:grid;grid-template-columns:auto minmax(0,1fr) 90px auto;gap:6px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;padding:2px;gap:2px;flex-wrap:wrap}
+.seg button{font:600 13px var(--f-body);border:0;background:transparent;color:var(--muted);padding:6px 11px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.report{display:grid;gap:6px;font-size:13px}
+.report .e{color:var(--bad)} .report .a{color:var(--warn)} .report .o{color:var(--ok);font-weight:700}
+.stat{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted)}
+.stat b{color:var(--ink);font-variant-numeric:tabular-nums}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--bad)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+:root{--asb:#F52286;--asb-ink:#ffffff;--f-fest:"Bodoni Moda","Bodoni 72",Didot,Georgia,serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--asb:#ff5aa5;--asb-ink:#16070f}}
+:root[data-theme="dark"]{--asb:#ff5aa5;--asb-ink:#16070f}
+.fest{display:grid;gap:10px;padding:22px;border-radius:14px;background:var(--surface);border:1px solid var(--line);position:relative;overflow:hidden}
+.fest::after{content:"";position:absolute;left:-10%;right:-10%;top:58%;height:14px;background:var(--asb);transform:rotate(-2.2deg);opacity:.9;pointer-events:none}
+.fest>*{position:relative;z-index:1}
+.fest .brand{font:800 clamp(40px,8vw,84px)/0.9 var(--f-fest);letter-spacing:.01em}
+.fest .sub{font:600 15px var(--f-body);color:var(--muted);max-width:60ch}
+.fest .facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;margin-top:18px}
+.fest .facts b{font-variant-numeric:tabular-nums}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.filters button{font:600 13px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:99px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.day{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;padding-block:14px;border-top:1px solid var(--line)}
+@media (max-width:700px){.day{grid-template-columns:1fr;gap:8px}}
+.day .d{font:800 28px/1 var(--f-display)}
+.day .d small{display:block;font:600 12px var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.funcs{display:grid;gap:10px}
+.fc{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--isla);border-radius:10px;padding:12px 14px}
+@media (max-width:700px){.fc{grid-template-columns:1fr}}
+.fc .h{font:700 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.fc h3{font-size:18px}
+.fc .who{font-size:14px;color:var(--muted)}
+.fc .where{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.fc .act{display:grid;gap:6px;justify-items:end;text-align:right}
+@media (max-width:700px){.fc .act{justify-items:start;text-align:left}}
+.fc .price{font:700 15px var(--f-body);font-variant-numeric:tabular-nums}
+.badge{font:700 11px var(--f-body);letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--soft);color:var(--muted)}
+.badge.num{background:var(--okbg);color:var(--ok)} .badge.gen{background:var(--warnbg);color:var(--warn)} .badge.lib{background:var(--soft);color:var(--ink)}
+.fc a{color:var(--accent);font-size:13px;font-weight:600}
+.btn.asb{background:var(--asb);color:var(--asb-ink)}
+.ga{display:grid;gap:14px;justify-items:start}
+.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.qty button{border:0;background:var(--soft);color:var(--ink);font:700 20px var(--f-body);width:44px;height:44px;cursor:pointer}
+.qty output{min-width:56px;text-align:center;font:800 22px var(--f-display);font-variant-numeric:tabular-nums}
+.pr-flag{font-size:12px;color:var(--warn);font-weight:700}
+.notas{font-size:13px;color:var(--warn);background:var(--warnbg);border-radius:8px;padding:8px 10px}
+</style>
+
+<div class="wrap">
+  <header class="ev">
+    <div style="display:grid;gap:8px;min-width:0">
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag demo">Prototipo · venta en modo prueba</span><span class="tag" id="evFest">ASOMBRA 2026</span></div>
+      <h1 id="evTitle"></h1>
+      <div class="ev-meta"><span><b id="evVenue"></b></span><span id="evDate"></span><span id="evCap"></span></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Secciones">
+      <button role="tab" data-v="cartelera" aria-selected="true">Cartelera</button>
+      <button role="tab" data-v="comprar" aria-selected="false">Comprar</button>
+      <button role="tab" data-v="entradas" aria-selected="false">Mis entradas <span id="tkCount"></span></button>
+      <button role="tab" data-v="acceso" aria-selected="false">Acceso</button>
+      <button role="tab" data-v="panel" aria-selected="false">Panel</button>
+      <button role="tab" data-v="planos" aria-selected="false">Planos</button>
+    </nav>
+  </header>
+
+  <!-- CARTELERA -->
+  <section class="view stack" id="v-cartelera">
+    <div class="fest">
+      <div class="brand">ASOMBRA</div>
+      <div class="sub">Festival Internacional de Magia de Canarias · edición 2026</div>
+      <div class="facts" id="festFacts"></div>
+    </div>
+    <div class="filters" id="islaFilter" role="group" aria-label="Filtrar por isla"></div>
+    <div id="cartelera"></div>
+    <p class="muted small" id="fuenteProg" style="margin:0"></p>
+  </section>
+
+  <!-- COMPRAR -->
+  <section class="view" id="v-comprar" hidden>
+    <div class="two">
+      <div class="panel" id="buyMain"></div>
+      <aside class="panel stack">
+        <div class="stack" id="zonePrices" style="gap:8px"></div>
+        <div id="cartEmpty" class="notice">Elige tus butacas en el plano o pulsa «Buscar» para que la plataforma te asigne las mejores. Máximo 8 por compra.</div>
+        <div id="cartFull" class="stack" hidden>
+          <div class="timer" role="timer"><span>Reservado para ti</span><span class="mono" id="clock">10:00</span></div>
+          <div class="chips" id="chips"></div>
+          <div class="lines" id="lines"></div>
+          <form id="pay" novalidate>
+            <label class="f" for="nm">Nombre y apellidos<input type="text" id="nm" value="Lucía Cabrera (ejemplo)" autocomplete="name"></label>
+            <label class="f" for="em">Correo para recibir las entradas<input type="email" id="em" value="lucia@ejemplo.com" autocomplete="email"></label>
+            <div class="stripe">
+              <div class="hd"><span>Tarjeta · Stripe (modo prueba)</span><span>Apple Pay · Google Pay</span></div>
+              <input type="text" id="cc" value="4242 4242 4242 4242" inputmode="numeric" aria-label="Número de tarjeta">
+              <div class="g2"><input type="text" id="ccx" value="12/30" aria-label="Caducidad"><input type="text" id="ccv" value="123" aria-label="CVC"></div>
+            </div>
+            <label class="check" for="t1"><input type="checkbox" id="t1"> Acepto las condiciones de compra y la política de privacidad del organizador.</label>
+            <label class="check" for="t2"><input type="checkbox" id="t2"> Quiero recibir la programación del festival (opcional).</label>
+            <div id="payErr" class="notice" style="color:var(--bad)" hidden></div>
+            <button class="btn full" id="payBtn" type="submit">Pagar</button>
+            <button class="btn ghost full sm" id="clearBtn" type="button">Vaciar selección</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- MIS ENTRADAS -->
+  <section class="view stack" id="v-entradas" hidden>
+    <div class="sec-h"><h2>Mis entradas</h2><span class="muted small">El QR cambia cada 15 segundos: una captura de pantalla deja de valer.</span></div>
+    <div id="tickets" class="tickets"></div>
+  </section>
+
+  <!-- ACCESO -->
+  <section class="view" id="v-acceso" hidden>
+    <div class="two" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+      <div class="panel stack">
+        <label class="f" for="doorFun">Puerta de la función<select id="doorFun"></select></label>
+        <div class="sec-h"><h2 id="doorTitle">Puerta principal</h2><span class="tag" id="inside">Dentro: 0</span></div>
+        <div class="result r-idle" id="res"><div>Esperando lectura<small>En la app real se usa la cámara del móvil y funciona sin conexión.</small></div></div>
+        <form id="manual" style="grid-template-columns:minmax(0,1fr) auto;align-items:end">
+          <label class="f" for="code">Código leído<input type="text" id="code" class="mono" placeholder="TKT-XXXXXXXX.000000.xxxx"></label>
+          <button class="btn" type="submit">Validar</button>
+        </form>
+      </div>
+      <div class="panel stack">
+        <div class="sec-h"><h2>Simular lectura</h2><span class="muted small">«Captura» simula una foto del QR de hace un minuto</span></div>
+        <div class="list" id="scanList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL -->
+  <section class="view stack" id="v-panel" hidden>
+    <div class="panel" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+      <label class="f" for="panFun" style="flex:1 1 320px">Función<select id="panFun"></select></label>
+      <div class="stat" id="festStat"></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="two">
+      <div class="panel stack">
+        <div class="sec-h"><h2>Ocupación</h2><span class="muted small" id="ocuHint"></span></div>
+        <div class="stack" id="zbars"></div>
+      </div>
+      <div class="panel stack">
+        <h2>Precios y venta de esta función</h2>
+        <div class="stack" id="funCfg"></div>
+        <div class="g2"><label class="f" for="evFee">Gastos de gestión (€)<input type="number" id="evFee" min="0" step="0.05"></label><label class="f" for="evTax">IGIC incluido (%)<input type="number" id="evTax" min="0" step="0.5"></label></div>
+        <p class="muted small" style="margin:0">Gastos e IGIC se aplican a todo el festival. El tipo de IGIC es de ejemplo: confírmalo con la asesoría.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost sm" id="simBtn" type="button">Simular ventas previas</button>
+          <span id="resetBox"></span>
+        </div>
+      </div>
+    </div>
+    <div class="panel stack">
+      <div class="sec-h"><h2>Pedidos</h2><button class="btn ghost sm" id="csvBtn" type="button">Copiar CSV de entradas</button></div>
+      <div class="tablebox"><table><thead><tr><th>Pedido</th><th>Función</th><th>Comprador</th><th>Entradas</th><th>Importe</th><th>Gastos</th></tr></thead><tbody id="orders"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section class="view stack" id="v-planos" hidden>
+    <div class="panel" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <label class="f" for="planSel" style="flex:1 1 260px">Plano<select id="planSel"></select></label>
+      <button class="btn ghost sm" id="newPlan" type="button">Nuevo plano</button>
+      <button class="btn ghost sm" id="dupPlan" type="button">Duplicar</button>
+      <span id="delBox"></span>
+    </div>
+    <div class="ed">
+      <div class="stack">
+        <div class="panel stack">
+          <h2>Recinto</h2>
+          <label class="f" for="pNombre">Nombre del plano<input type="text" id="pNombre"></label>
+          <label class="f" for="pRecinto">Recinto<input type="text" id="pRecinto"></label>
+          <label class="f" for="pFuente">De dónde sale el plano<input type="text" id="pFuente" placeholder="Plano técnico, fecha, escala"></label>
+          <div class="g2"><label class="f" for="pAfB">Butacas según plano oficial<input type="number" id="pAfB" min="0"></label><label class="f" for="pAfP">Espacios PMR oficiales<input type="number" id="pAfP" min="0"></label></div>
+          <div class="notas" id="pNotas" hidden></div>
+          <div style="display:grid;gap:8px;border-top:1px dashed var(--line);padding-top:12px">
+            <label class="f" for="assignVenue">Usar este plano para las funciones de<select id="assignVenue"></select></label>
+            <span id="assignBox"><button class="btn sm" id="assignBtn" type="button">Asignar plano</button></span>
+            <span class="muted small" id="assignInfo"></span>
+          </div>
+        </div>
+        <div class="panel stack">
+          <div class="sec-h"><h2>Zonas de precio</h2><button class="btn ghost sm" id="addZone" type="button">Añadir zona</button></div>
+          <div class="mini" id="zonesEd"></div>
+          <p class="muted small" style="margin:0">El precio de aquí es el de partida; en el Panel se ajusta por función.</p>
+        </div>
+        <div class="panel stack">
+          <div class="sec-h"><h2>Bloques de filas</h2><button class="btn ghost sm" id="addBlock" type="button">Añadir bloque</button></div>
+          <p class="muted small" style="margin:0">Un bloque es un grupo de filas seguidas, como el patio de butacas o el anfiteatro. Se dibujan uno detrás de otro, alejándose del escenario.</p>
+          <div class="stack" id="blocksEd"></div>
+        </div>
+        <div class="panel stack">
+          <h2>Pasar a Claude Code</h2>
+          <p class="muted small" style="margin:0">Copia el plano en formato de datos para cargarlo en la plataforma real, o pega aquí uno para importarlo.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="expBtn" type="button">Copiar plano</button><button class="btn ghost sm" id="impBtn" type="button">Importar lo pegado</button></div>
+          <label class="f" for="impTxt">Datos del plano<textarea id="impTxt" spellcheck="false"></textarea></label>
+        </div>
+      </div>
+      <div class="stack" style="min-width:0">
+        <div class="panel">
+          <div class="sec-h" style="margin-bottom:10px"><h2>Vista previa</h2><div class="stat" id="edStat"></div></div>
+          <div class="tools" style="margin:0 0 12px;padding:0;border:0">
+            <span class="small muted">Al pulsar una butaca:</span>
+            <div class="seg" id="toolSeg" role="group" aria-label="Herramienta">
+              <button type="button" data-t="zona" aria-pressed="true">Cambiar zona</button>
+              <button type="button" data-t="bloqueo" aria-pressed="false">Bloqueo técnico</button>
+              <button type="button" data-t="acompanante" aria-pressed="false">Acompañante</button>
+              <button type="button" data-t="visibilidad" aria-pressed="false">Visibilidad reducida</button>
+              <button type="button" data-t="quitar" aria-pressed="false">Quitar / devolver</button>
+            </div>
+            <select class="auto" id="toolZone" aria-label="Zona a aplicar"></select>
+            <button class="btn ghost sm" id="clearAdj" type="button">Deshacer ajustes a mano</button>
+          </div>
+          <div class="legend" id="edLegend"></div>
+          <div class="mapbox" id="edMap"></div>
+        </div>
+        <div class="panel stack"><h2>Comprobación</h2><div class="report" id="report"></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+const DATA={"fuente": "Hoja 'Programa completo festival' final (21/10/2026) + venta oficial de Entradas Canarias", "funciones": [{"id": "f01", "titulo": "La Maga", "gala": false, "artistas": ["Dania Díaz"], "fecha": "2026-11-06", "hora": "20:00", "recinto": "jesus-arencibia", "recintoNombre": "Centro Cultural Jesús Arencibia", "municipio": "Tamaraceite, Las Palmas de Gran Canaria", "isla": "gran-canaria", "precio": 11, "desde": true, "ticketUrl": "https://venta.entradascanarias.com/entradascanarias/events/61101", "edad": null, "verificar": false}, {"id": "f06", "titulo": "Tempos Mágicos + Maison Magique", "gala": false, "artistas": ["Pepín Banzo y Helena Perdomo", "Magic Twins"], "fecha": "2026-11-06", "hora": "20:00", "recinto": "union-tejina", "recintoNombre": "Teatro Unión Tejina", "municipio": "Tejina, San Cristóbal de La Laguna", "isla": "tenerife", "precio": 15, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f02", "titulo": "T-Hipnotizo", "gala": false, "artistas": ["Jorge Luengo"], "fecha": "2026-11-07", "hora": "20:00", "recinto": "jesus-arencibia", "recintoNombre": "Centro Cultural Jesús Arencibia", "municipio": "Tamaraceite, Las Palmas de Gran Canaria", "isla": "gran-canaria", "precio": 11, "desde": true, "ticketUrl": "https://venta.entradascanarias.com/entradascanarias/events/61096", "edad": 12, "verificar": false}, {"id": "f03", "titulo": "Magia Familiar", "gala": false, "artistas": ["Miriam Santana"], "fecha": "2026-11-08", "hora": "11:00", "recinto": "parque-doramas", "recintoNombre": "Parque Doramas", "municipio": "Las Palmas de Gran Canaria", "isla": "gran-canaria", "precio": 0, "desde": false, "ticketUrl": null, "edad": null, "verificar": false}, {"id": "f04", "titulo": "Cómo lo habrá hecho con lo tonto que es", "gala": false, "artistas": ["Nano Arranz"], "fecha": "2026-11-08", "hora": "12:00", "recinto": "parque-doramas", "recintoNombre": "Parque Doramas", "municipio": "Las Palmas de Gran Canaria", "isla": "gran-canaria", "precio": 0, "desde": false, "ticketUrl": null, "edad": null, "verificar": false}, {"id": "f05", "titulo": "Magia Divertida", "gala": false, "artistas": ["Carlos Adriano"], "fecha": "2026-11-08", "hora": "13:00", "recinto": "parque-doramas", "recintoNombre": "Parque Doramas", "municipio": "Las Palmas de Gran Canaria", "isla": "gran-canaria", "precio": 0, "desde": false, "ticketUrl": null, "edad": null, "verificar": false}, {"id": "f07", "titulo": "El Último Gran Majo", "gala": false, "artistas": ["Héctor Sansegundo"], "fecha": "2026-11-13", "hora": "20:00", "recinto": "auditorio-pdr", "recintoNombre": "Auditorio Insular", "municipio": "Puerto del Rosario", "isla": "fuerteventura", "precio": null, "desde": false, "ticketUrl": null, "edad": null, "verificar": false}, {"id": "f08", "titulo": "Magia Familiar", "gala": false, "artistas": ["Miriam Santana"], "fecha": "2026-11-14", "hora": "20:00", "recinto": "plaza-caleta-sebo", "recintoNombre": "Plaza Caleta de Sebo", "municipio": "Caleta de Sebo, Teguise", "isla": "la-graciosa", "precio": 0, "desde": false, "ticketUrl": null, "edad": null, "verificar": false}, {"id": "f09", "titulo": "Magia en Femenino", "gala": false, "artistas": ["Jessica Guloomal"], "fecha": "2026-11-21", "hora": "13:00", "recinto": "holidayworld", "recintoNombre": "Holidayworld", "municipio": "Maspalomas, San Bartolomé de Tirajana", "isla": "gran-canaria", "precio": null, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f14", "titulo": "The Great Mago Manu", "gala": false, "artistas": ["Mago Manu"], "fecha": "2026-11-21", "hora": "17:00", "recinto": "holidayworld", "recintoNombre": "Holidayworld", "municipio": "Maspalomas, San Bartolomé de Tirajana", "isla": "gran-canaria", "precio": null, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f15", "titulo": "Boogali Boogaloo", "gala": false, "artistas": ["Francis Zafrilla"], "fecha": "2026-11-21", "hora": "18:00", "recinto": "holidayworld", "recintoNombre": "Holidayworld", "municipio": "Maspalomas, San Bartolomé de Tirajana", "isla": "gran-canaria", "precio": null, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f16", "titulo": "El Último Gran Majo", "gala": false, "artistas": ["Héctor Sansegundo"], "fecha": "2026-11-21", "hora": "19:00", "recinto": "holidayworld", "recintoNombre": "Holidayworld", "municipio": "Maspalomas, San Bartolomé de Tirajana", "isla": "gran-canaria", "precio": null, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f10", "titulo": "Más allá de la imaginación", "gala": false, "artistas": ["Anthony Blake"], "fecha": "2026-11-28", "hora": "20:00", "recinto": "auditorio-pdr", "recintoNombre": "Auditorio Insular", "municipio": "Puerto del Rosario", "isla": "fuerteventura", "precio": null, "desde": false, "ticketUrl": null, "edad": 12, "verificar": false}, {"id": "f11", "titulo": "Magia en Femenino + Five", "gala": false, "artistas": ["Jessica Guloomal", "Jorge Vilar"], "fecha": "2026-12-18", "hora": "20:00", "recinto": "cine-frontera", "recintoNombre": "Cine Frontera", "municipio": "Frontera", "isla": "el-hierro", "precio": null, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f12", "titulo": "Gran Gala Internacional ASOMBRA", "gala": true, "artistas": ["Sergio Encinas", "Héctor Mancha", "Dúo Kybalión", "Amadeo Edama"], "fecha": "2026-12-18", "hora": "20:00", "recinto": "victor-jara", "recintoNombre": "Teatro Víctor Jara", "municipio": "Vecindario, Santa Lucía de Tirajana", "isla": "gran-canaria", "precio": 25, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}, {"id": "f13", "titulo": "Gran Gala Internacional ASOMBRA", "gala": true, "artistas": ["Sergio Encinas", "Héctor Mancha", "Dúo Kybalión", "Amadeo Edama"], "fecha": "2026-12-19", "hora": "20:00", "recinto": "multicines-atlantida", "recintoNombre": "Multicines Atlántida", "municipio": "Municipio por confirmar", "isla": "lanzarote", "precio": 25, "desde": false, "ticketUrl": null, "edad": null, "verificar": true}], "islas": {"gran-canaria": {"nombre": "Gran Canaria", "acento": "#F52286", "base": "#111116"}, "fuerteventura": {"nombre": "Fuerteventura", "acento": "#2469B0", "base": "#E7D0B1"}, "tenerife": {"nombre": "Tenerife", "acento": "#AC74D6", "base": "#30204F"}, "lanzarote": {"nombre": "Lanzarote", "acento": "#BD5548", "base": "#292426"}, "el-hierro": {"nombre": "El Hierro", "acento": "#247B70", "base": "#102B28"}, "la-graciosa": {"nombre": "La Graciosa", "acento": "#FF5096", "base": "#00BED0"}}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur=n=>(+n||0).toLocaleString('es-ES',{style:'currency',currency:'EUR'});
+const clone=o=>JSON.parse(JSON.stringify(o));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const MAX=8, HOLD_MIN=10, KY=0.62, PROF=52, MARGEN=100, AFORO_PRUEBA=200, PRECIO_PRUEBA=15;
+const fecha=(f,o)=>new Date(f+'T12:00').toLocaleDateString('es-ES',o||{weekday:'short',day:'numeric',month:'short'});
+
+/* ===================== PLANOS DE EJEMPLO ===================== */
+const ANTIGUA={id:'antigua',nombre:'Aforo completo',recinto:'Centro Cultural Polivalente de Antigua · Fuerteventura',
+  fuente:'Plano 02 «Aforo completo», Oficina Técnica del Cabildo de Fuerteventura, febrero 2022, escala 1/150',
+  notas:'Supuestos: la butaca F-17-4 es la de acompañante PMR. Zonas y precios de ejemplo.',
+  aforo:{butacas:377,pmr:2},
+  zonas:[{codigo:'preferente',nombre:'Preferente',color:'#6a3fd0',precio:22},{codigo:'central',nombre:'Central',color:'#1b78b5',precio:18},{codigo:'fondo',nombre:'Fondo',color:'#0f8a6c',precio:14}],
+  bloques:[{id:'b1',nombre:'Platea',codigo:'PLATEA',desde:1,hasta:19,prefijo:'F-',butacas:20,numeracion:'derecha',imparesA:'derecha',pasilloCentral:0,pasillos:'7, 16',
+    tramos:[{desde:1,hasta:7,zona:'preferente'},{desde:8,hasta:16,zona:'central'},{desde:17,hasta:19,zona:'fondo'}],excepciones:[],quitar:[],pmr:[{fila:17,sustituye:'1, 2, 3',cantidad:2}]}],
+  ajustes:{'PLATEA-F17-4':{tipo:'acompanante'}}};
+const PDR={id:'pdr',nombre:'Aforo completo',recinto:'Auditorio Insular de Puerto del Rosario · Fuerteventura',
+  fuente:'Planos «Planta baja» y «Planta alta · Aforo completo», Oficina Técnica del Cabildo de Fuerteventura, abril 2022, escala 1/150',
+  notas:'Supuestos: el plano no numera el anfiteatro; se ha puesto filas A-1 a A-5 con impares a la izquierda, como en el patio. Precios de prueba hasta tener los oficiales.',
+  aforo:{butacas:510,pmr:3},
+  zonas:[{codigo:'platea',nombre:'Patio de butacas',color:'#2469b0',precio:15},{codigo:'anfiteatro',nombre:'Anfiteatro',color:'#b06a1e',precio:12}],
+  bloques:[
+   {id:'b1',nombre:'Patio de butacas',codigo:'PLATEA',desde:1,hasta:19,prefijo:'F-',butacas:22,numeracion:'pares_impares',imparesA:'izquierda',pasilloCentral:120,pasillos:'',
+    tramos:[{desde:1,hasta:19,zona:'platea'}],excepciones:[],pmr:[{fila:1,sustituye:'2, 4, 6, 8, 10',cantidad:3}],
+    quitar:[{fila:19,butacas:'2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22'}]},
+   {id:'b2',nombre:'Anfiteatro',codigo:'ANF',desde:1,hasta:5,prefijo:'A-',butacas:24,numeracion:'pares_impares',imparesA:'izquierda',pasilloCentral:160,pasillos:'2',
+    tramos:[{desde:1,hasta:5,zona:'anfiteatro'}],excepciones:[{fila:3,butacas:20},{fila:4,butacas:20},{fila:5,butacas:20}],pmr:[],quitar:[]}],
+  ajustes:{}};
+
+/* ===================== FUNCIONES ===================== */
+const PRUEBA_ANT={id:'t01',titulo:'Prueba técnica de venta',gala:false,artistas:['Evento ficticio para probar Antigua'],fecha:'2026-11-27',hora:'20:30',recinto:'antigua',
+  recintoNombre:'Centro Cultural Polivalente de Antigua',municipio:'Antigua',isla:'fuerteventura',precio:null,desde:false,ticketUrl:null,edad:null,ficticio:true};
+const FUNCS=[...DATA.funciones,PRUEBA_ANT];
+const ISLAS=DATA.islas;
+const fun=id=>FUNCS.find(f=>f.id===id);
+const RECINTOS=[...new Map(FUNCS.map(f=>[f.recinto,{id:f.recinto,nombre:f.recintoNombre,isla:f.isla}])).values()];
+
+/* ===================== GENERADOR DE PLANOS ===================== */
+const nums=s=>String(s??'').split(/[^0-9]+/).filter(Boolean).map(Number);
+function numeroEn(p,n,b){
+  if(b.numeracion==='derecha') return n-p;
+  if(b.numeracion==='izquierda') return p+1;
+  const der=Math.floor(n/2), izq=n-der, impD=b.imparesA!=='izquierda';
+  if(p>=izq){const k=p-izq; return impD?2*k+1:2*k+2;}
+  const k=izq-1-p; return impD?2*k+2:2*k+1;
+}
+function generar(spec){
+  const PX=52, PY=90, PAS=120, SEP=250, ESC=300;
+  const asientos=[], filas=[], objetos=[], avisosGen=[];
+  let yCursor=MARGEN+ESC+SEP;
+  const multi=spec.bloques.length>1, etiquetas=[];
+  for(const b of spec.bloques){
+    const desde=+b.desde, hasta=+b.hasta, n0=+b.butacas;
+    if(!(desde>=1&&hasta>=desde&&n0>=1)){avisosGen.push(`El bloque «${b.nombre}» tiene filas o butacas mal indicadas`);continue;}
+    if(multi){yCursor+=70;}
+    const pas=nums(b.pasillos), exc=b.excepciones||[];
+    const maxN=Math.max(n0,...exc.map(e=>+e.butacas||0));
+    const pref=b.prefijo??'', comp=pref.replace(/[^A-Za-z0-9]/g,''), sec=(b.codigo||b.nombre||'S').toUpperCase().replace(/[^A-Z0-9]/g,'')||'S';
+    const yF=r=>yCursor+(r-desde)*PY+pas.filter(f=>f<r&&f>=desde).length*PAS;
+    const bAs=[];
+    for(let r=desde;r<=hasta;r++){
+      const fila=`${pref}${r}`, y=yF(r);
+      filas.push({seccion:sec,etiqueta:fila,y});
+      const n=+(exc.find(e=>+e.fila===r)?.butacas)||n0;
+      const des=(maxN-n)*PX/2, gap=(+b.pasilloCentral||0);
+      const zona=(b.tramos||[]).find(t=>r>=+t.desde&&r<=+t.hasta)?.zona||'';
+      const pm=(b.pmr||[]).filter(e=>+e.fila===r), sus=new Set(pm.flatMap(e=>nums(e.sustituye)));
+      const qt=new Set((b.quitar||[]).filter(q=>+q.fila===r).flatMap(q=>nums(q.butacas)));
+      const xDe=p=>des+p*PX+(gap&&p>=n-Math.floor(n/2)?gap:0);
+      const pos=new Map();
+      for(let p=0;p<n;p++){
+        const num=numeroEn(p,n,b); pos.set(num,p);
+        if(sus.has(num)||qt.has(num))continue;
+        bAs.push({codigo:`${sec}-${comp}${r}-${num}`,seccion:sec,bloque:b.nombre,fila,numero:String(num),zona,tipo:'normal',bloqueado:false,quitada:false,x:xDe(p),y,ancho:PX*.85});
+      }
+      let c=0;
+      for(const e of pm){
+        const ps=nums(e.sustituye).map(v=>pos.get(v)).filter(v=>v!==undefined); const k=Math.max(1,+e.cantidad||1);
+        if(!ps.length){avisosGen.push(`En ${fila} no existen las butacas ${e.sustituye} para los espacios PMR`);continue;}
+        const x0=xDe(Math.min(...ps)), x1=xDe(Math.max(...ps))+PX, h=(x1-x0)/k;
+        for(let i=0;i<k;i++){c++; bAs.push({codigo:`${sec}-${comp}${r}-PMR${c}`,seccion:sec,bloque:b.nombre,fila,numero:`PMR ${c}`,zona,tipo:'silla_ruedas',bloqueado:false,quitada:false,x:x0+i*h,y,ancho:h-PX*.15});}
+      }
+    }
+    if(bAs.length){
+      const xa=Math.min(...bAs.map(a=>a.x)), xb=Math.max(...bAs.map(a=>a.x+a.ancho));
+      for(const f of pas){ if(f<desde||f>=hasta)continue; const y=yF(f)+PY*.7; objetos.push({tipo:'pasillo',x:xa,x1:xb,y,alto:yF(f+1)-y-PY*.1,sec}); }
+      if(multi) etiquetas.push({tipo:'texto',x:xa,x1:xb,y:yCursor-62,texto:b.nombre,sec});
+    }
+    asientos.push(...bAs);
+    yCursor=yF(hasta)+PY+PAS*1.6;
+  }
+  objetos.push(...etiquetas);
+  const porSec={};
+  asientos.forEach(a=>{const s=porSec[a.seccion]||(porSec[a.seccion]={x0:1e9,x1:-1e9}); s.x0=Math.min(s.x0,a.x); s.x1=Math.max(s.x1,a.x+a.ancho);});
+  const anchoMax=Math.max(0,...Object.values(porSec).map(s=>s.x1-s.x0));
+  for(const [k,s] of Object.entries(porSec)){const dx=MARGEN+(anchoMax-(s.x1-s.x0))/2-s.x0; asientos.filter(a=>a.seccion===k).forEach(a=>a.x+=dx); objetos.filter(o=>o.sec===k).forEach(o=>{o.x+=dx;o.x1+=dx;});}
+  objetos.unshift({tipo:'escenario',x:MARGEN+anchoMax*.1,x1:MARGEN+anchoMax*.9,y:MARGEN,alto:ESC});
+  const aj=spec.ajustes||{};
+  for(const a of asientos){const j=aj[a.codigo]; if(!j)continue;
+    if(j.zona)a.zona=j.zona; if(j.tipo&&a.tipo!=='silla_ruedas')a.tipo=j.tipo; if(j.bloqueado)a.bloqueado=true; if(j.quitada)a.quitada=true;}
+  const alto=(asientos.length?Math.max(...asientos.map(a=>a.y)):MARGEN+ESC+SEP)+PROF/KY+MARGEN;
+  return {asientos,filas,objetos,lienzo:{ancho:anchoMax+2*MARGEN,alto},avisosGen};
+}
+
+/* ===================== COMPROBACIÓN ===================== */
+function comprobar(spec,g){
+  const err=[...g.avisosGen], av=[];
+  const vivos=g.asientos.filter(a=>!a.quitada);
+  const pmr=vivos.filter(a=>a.tipo==='silla_ruedas').length, but=vivos.length-pmr;
+  const cods=new Map(); vivos.forEach(a=>cods.set(a.codigo,(cods.get(a.codigo)||0)+1));
+  const dup=[...cods].filter(([,n])=>n>1).map(([c])=>c);
+  if(dup.length) err.push(`Hay butacas repetidas (${dup.slice(0,4).join(', ')}): revisa que dos bloques no usen el mismo código interno`);
+  const zs=new Set(spec.zonas.map(z=>z.codigo));
+  const sin=vivos.filter(a=>!zs.has(a.zona));
+  if(sin.length) err.push(`${sin.length} butacas sin zona de precio (por ejemplo ${sin.slice(0,3).map(a=>a.fila+' · '+a.numero).join(', ')}). Revisa los tramos de filas de cada bloque.`);
+  const usadas=new Set(vivos.map(a=>a.zona)); spec.zonas.forEach(z=>{if(!usadas.has(z.codigo))av.push(`La zona «${z.nombre}» no tiene butacas asignadas`)});
+  if(spec.aforo&&(+spec.aforo.butacas||+spec.aforo.pmr)){
+    if(but!==+spec.aforo.butacas) err.push(`El plano oficial dice ${spec.aforo.butacas} butacas y aquí salen ${but} (diferencia ${but-spec.aforo.butacas>0?'+':''}${but-spec.aforo.butacas})`);
+    if(pmr!==+spec.aforo.pmr) err.push(`El plano oficial dice ${spec.aforo.pmr} espacios PMR y aquí salen ${pmr}`);
+  } else av.push('Indica el aforo del plano oficial para poder comprobar que coincide');
+  if(!pmr&&vivos.length) av.push('El plano no tiene espacios para silla de ruedas');
+  const filasPmr=new Set(vivos.filter(a=>a.tipo==='silla_ruedas').map(a=>a.seccion+a.fila));
+  for(const f of filasPmr) if(!vivos.some(a=>a.tipo==='acompanante'&&a.seccion+a.fila===f)) {av.push('Hay espacios PMR sin butaca de acompañante marcada en su fila (márcala con la herramienta «Acompañante»)'); break;}
+  const bl=vivos.filter(a=>a.bloqueado).length; if(bl) av.push(`${bl} butacas con bloqueo técnico no saldrán a la venta`);
+  const q=g.asientos.length-vivos.length; if(q) av.push(`${q} posiciones quitadas a mano (columnas, puertas, etc.)`);
+  return {ok:!err.length,err,av,but,pmr,bl,vend:vivos.length-bl};
+}
+
+/* ===================== DIBUJO SVG ===================== */
+function svgPlano(spec,g,modo,estado){
+  const col=Object.fromEntries(spec.zonas.map(z=>[z.codigo,z.color]));
+  const W=g.lienzo.ancho, H=g.lienzo.alto*KY, Y=y=>y*KY;
+  const o=[`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Plano ${esc(spec.recinto||spec.nombre)}">`,
+   `<defs><pattern id="hatch-${modo}" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="var(--sold)"/><rect width="4" height="10" fill="var(--hold)"/></pattern></defs>`];
+  for(const ob of g.objetos){
+    if(ob.tipo==='escenario') o.push(`<rect x="${ob.x}" y="${Y(ob.y)}" width="${ob.x1-ob.x}" height="${Y(ob.alto)}" rx="18" fill="var(--stage)"/><text x="${(ob.x+ob.x1)/2}" y="${Y(ob.y+ob.alto/2)+14}" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="700" font-size="42" letter-spacing="16" fill="var(--stage-ink)">ESCENARIO</text>`);
+    else if(ob.tipo==='texto') o.push(`<text x="${(ob.x+ob.x1)/2}" y="${Y(ob.y)+18}" text-anchor="middle" font-family="Bricolage Grotesque, system-ui, sans-serif" font-weight="700" font-size="30" letter-spacing="6" fill="var(--ink)">${esc(ob.texto.toUpperCase())}</text>`);
+    else o.push(`<rect x="${ob.x}" y="${Y(ob.y)}" width="${ob.x1-ob.x}" height="${Y(ob.alto)}" fill="var(--soft)"/><text x="${(ob.x+ob.x1)/2}" y="${Y(ob.y+ob.alto/2)+9}" text-anchor="middle" font-size="24" letter-spacing="12" fill="var(--muted)" font-family="JetBrains Mono, monospace">PASILLO</text>`);
+  }
+  const fl={};
+  g.asientos.forEach(a=>{const k=a.seccion+'|'+a.fila; const f=fl[k]||(fl[k]={y:a.y,x0:1e9,x1:-1e9,et:a.fila}); f.x0=Math.min(f.x0,a.x); f.x1=Math.max(f.x1,a.x+a.ancho);});
+  Object.values(fl).forEach(f=>{const y=Y(f.y)+PROF/2+8; o.push(`<text x="${f.x0-14}" y="${y}" text-anchor="end" font-size="22" font-weight="600" fill="var(--muted)" font-family="JetBrains Mono, monospace">${esc(f.et)}</text><text x="${f.x1+14}" y="${y}" font-size="22" font-weight="600" fill="var(--muted)" font-family="JetBrains Mono, monospace">${esc(f.et)}</text>`);});
+  for(const a of g.asientos){
+    const y=Y(a.y), w=a.ancho, h=PROF;
+    let fill=col[a.zona]||'#e0007a', stroke='', txt='#ffffff', op=1, dis=false;
+    if(modo==='venta'){
+      if(a.quitada)continue;
+      const st=estado.seats[a.codigo];
+      if(estado.sel.includes(a.codigo)){fill='var(--sel)';txt='#131a28';stroke=' stroke="var(--ink)" stroke-width="4"';}
+      else if(a.bloqueado||st==='sold'){fill='var(--sold)';txt='transparent';dis=true;}
+      else if(st==='hold'){fill=`url(#hatch-${modo})`;txt='transparent';dis=true;}
+    } else {
+      if(a.quitada){o.push(`<g data-c="${a.codigo}" tabindex="0" role="button" aria-label="${esc(a.fila+' '+a.numero)} quitada"><title>${esc(a.fila+' · '+a.numero)} · quitada</title><rect x="${a.x}" y="${y}" width="${w}" height="${h}" rx="12" fill="none" stroke="var(--line)" stroke-width="3" stroke-dasharray="6 5"/></g>`);continue;}
+      if(a.bloqueado)op=.35;
+    }
+    if(a.tipo==='acompanante'&&!stroke) stroke=' stroke="var(--ink)" stroke-width="4" stroke-dasharray="7 5"';
+    const lbl=`${a.fila} butaca ${a.numero}`+(a.tipo==='silla_ruedas'?' espacio silla de ruedas':a.tipo==='acompanante'?' acompañante':a.tipo==='visibilidad_reducida'?' visibilidad reducida':'')+(a.bloqueado?' bloqueo técnico':'');
+    o.push(`<g data-c="${a.codigo}" ${modo==='venta'&&dis?'aria-disabled="true"':'tabindex="0"'} role="button" aria-label="${esc(lbl)}"><title>${esc(a.fila+' · '+a.numero)}${a.tipo!=='normal'?' · '+a.tipo.replace('_',' '):''}${a.bloqueado?' · bloqueo técnico':''}</title><rect x="${a.x}" y="${y}" width="${w}" height="${h}" rx="${a.tipo==='silla_ruedas'?8:12}" fill="${fill}" fill-opacity="${op}"${stroke}/>`);
+    if(a.tipo==='silla_ruedas') o.push(`<text x="${a.x+w/2}" y="${y+h/2+9}" text-anchor="middle" font-size="24" font-weight="800" fill="${txt}" font-family="Figtree, sans-serif">PMR</text>`);
+    else o.push(`<text x="${a.x+w/2}" y="${y+h/2+7}" text-anchor="middle" font-size="19" font-weight="600" fill="${txt}" font-family="JetBrains Mono, monospace">${esc(a.numero)}</text>`);
+    if(a.tipo==='visibilidad_reducida') o.push(`<circle cx="${a.x+w-6}" cy="${y+6}" r="7" fill="var(--hold)"/>`);
+    o.push('</g>');
+  }
+  o.push('</svg>'); return o.join('');
+}
+
+/* ===================== ESTADO ===================== */
+const KEY='taquilla-prototipo-v3';
+let S=null;
+try{S=JSON.parse(localStorage.getItem(KEY)||'null');}catch(e){S=null;}
+if(!S||!S.planos){S={planos:[clone(PDR),clone(ANTIGUA)],editando:'pdr',recintos:{'auditorio-pdr':'pdr','antigua':'antigua'},
+  cfg:{},ventas:{},tickets:[],orders:[],used:{},inside:{},fun:'f07',door:'f07',isla:'todas',gastos:1,igic:7};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const planById=id=>S.planos.find(p=>p.id===id);
+let G={};
+const gen=p=>G[p.id]||(G[p.id]=generar(p));
+const regen=p=>{delete G[p.id]; return gen(p);};
+const planDe=f=>planById(S.recintos[f.recinto]);
+const modo=f=>f.precio===0?'libre':planDe(f)?'numerada':'general';
+const cfgDe=f=>S.cfg[f.id]||(S.cfg[f.id]={});
+const venta=f=>S.ventas[f.id]||(S.ventas[f.id]={seats:{},vendidas:0});
+function precioZona(f,z){const c=cfgDe(f).precios||{}; if(c[z.codigo]!=null&&c[z.codigo]!=='')return +c[z.codigo]; return f.precio!=null?+f.precio:+z.precio||0;}
+function precioGeneral(f){const c=cfgDe(f); if(c.precio!=null&&c.precio!=='')return +c.precio; return f.precio!=null?+f.precio:PRECIO_PRUEBA;}
+function esPrueba(f){ if(f.precio!=null)return false; const c=cfgDe(f), ok=v=>v!==''&&v!=null; if(planDe(f))return planDe(f).zonas.some(z=>!ok((c.precios||{})[z.codigo])); return !ok(c.precio); }
+const aforoGeneral=f=>+cfgDe(f).aforo||AFORO_PRUEBA;
+function zonasDe(f){ if(modo(f)==='numerada') return planDe(f).zonas.map(z=>({...z,precio:precioZona(f,z)})); return [{codigo:'general',nombre:'Entrada general',color:'#5a6478',precio:precioGeneral(f)}]; }
+const zonaDe=(f,c)=>zonasDe(f).find(z=>z.codigo===c)||{nombre:'Sin zona',precio:0,color:'#999999'};
+function minPrecio(f){return Math.min(...zonasDe(f).map(z=>z.precio));}
+
+let sel=[], selQty=0, holdEnd=0, timerId=null;
+const curFun=()=>fun(S.fun)||FUNCS[0];
+
+function simular(f){
+  const v=venta(f); let seed=7+f.id.charCodeAt(2); const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  if(modo(f)==='numerada'){
+    const g=gen(planDe(f)); const ys=g.asientos.map(a=>a.y), y0=Math.min(...ys), y1=Math.max(...ys);
+    g.asientos.forEach(a=>{ if(a.quitada||a.bloqueado||a.tipo==='silla_ruedas'||v.seats[a.codigo])return; const t=(a.y-y0)/((y1-y0)||1); if(rnd()<.58-.4*t)v.seats[a.codigo]='sold';});
+    const fk=[...new Set(g.asientos.map(a=>a.seccion+'|'+a.fila))]; const k=fk[Math.floor(fk.length*.3)];
+    const fila=g.asientos.filter(a=>a.seccion+'|'+a.fila===k&&!a.quitada&&a.tipo!=='silla_ruedas').sort((a,b)=>a.x-b.x);
+    const m=Math.floor(fila.length/2); fila.slice(Math.max(0,m-2),m+2).forEach(a=>{if(!v.seats[a.codigo])v.seats[a.codigo]='hold';});
+  } else if(modo(f)==='general'){ v.vendidas=Math.max(v.vendidas,Math.floor(aforoGeneral(f)*.45)); }
+}
+
+/* ===================== CABECERA Y CARTELERA ===================== */
+function renderHeader(){
+  const f=curFun(), m=modo(f);
+  $('evFest').textContent=f.ficticio?'Fuera del festival · prueba técnica':'ASOMBRA 2026 · '+(ISLAS[f.isla]?.nombre||'');
+  $('evTitle').textContent=f.titulo;
+  $('evVenue').textContent=`${f.recintoNombre} · ${f.municipio}`;
+  $('evDate').textContent=fecha(f.fecha,{weekday:'long',day:'numeric',month:'long'})+(f.hora?' · '+f.hora:' · horario por confirmar');
+  if(m==='numerada'){const c=comprobar(planDe(f),gen(planDe(f))); $('evCap').textContent=`Numerada · ${c.but} butacas${c.pmr?` + ${c.pmr} PMR`:''}`;}
+  else $('evCap').textContent=m==='libre'?'Acceso libre':`Aforo general · ${aforoGeneral(f)} plazas${cfgDe(f).aforo?'':' (de prueba)'}`;
+}
+function estadoFun(f){
+  const m=modo(f);
+  if(m==='libre')return {badge:'<span class="badge lib">Acceso libre</span>',price:'Gratuito',btn:''};
+  const p=esPrueba(f), v=venta(f);
+  let disp;
+  if(m==='numerada'){const g=gen(planDe(f)); disp=g.asientos.filter(a=>!a.quitada&&!a.bloqueado&&!v.seats[a.codigo]).length;}
+  else disp=aforoGeneral(f)-v.vendidas;
+  const agot=disp<=0;
+  return {badge:m==='numerada'?'<span class="badge num">Numerada · plano real</span>':`<span class="badge gen">Aforo general${cfgDe(f).aforo?'':' de prueba'}</span>`,
+    price:(p?'<span class="pr-flag">Precio por confirmar</span><br>':'')+(agot?'<b style="color:var(--bad)">Agotado</b>':`${f.desde||zonasDe(f).length>1?'Desde ':''}${eur(minPrecio(f))}${p?' <span class="muted small">(prueba)</span>':''}`),
+    btn:agot?'':`<button class="btn sm asb" type="button" data-buy="${f.id}">Comprar</button>`, disp};
+}
+function renderCartelera(){
+  const fest=FUNCS.filter(f=>!f.ficticio);
+  const islas=[...new Set(fest.map(f=>f.isla))];
+  $('festFacts').innerHTML=`<span><b>${fest.length}</b> funciones</span><span><b>${islas.length}</b> islas</span><span><b>${new Set(fest.map(f=>f.recinto)).size}</b> espacios</span><span>Del <b>${fecha(fest[0].fecha,{day:'numeric',month:'long'})}</b> al <b>${fecha(fest[fest.length-1].fecha,{day:'numeric',month:'long'})}</b></span>`;
+  $('islaFilter').innerHTML=`<button type="button" data-isla="todas" aria-pressed="${S.isla==='todas'}">Todas</button>`+islas.map(i=>`<button type="button" data-isla="${i}" aria-pressed="${S.isla===i}"><i class="dot" style="background:${ISLAS[i].acento}"></i>${esc(ISLAS[i].nombre)}</button>`).join('');
+  const list=FUNCS.filter(f=>S.isla==='todas'||f.isla===S.isla);
+  const grupos={}; list.filter(f=>!f.ficticio).forEach(f=>(grupos[f.fecha]=grupos[f.fecha]||[]).push(f));
+  const card=f=>{const e=estadoFun(f), isla=ISLAS[f.isla];
+    return `<article class="fc" style="--isla:${isla?.acento||'var(--line)'}"><div class="h">${esc(f.hora||'--:--')}</div>
+      <div style="display:grid;gap:3px;min-width:0"><h3>${f.gala?'<span class="badge" style="margin-right:6px">Gala</span>':''}${esc(f.titulo)}</h3>
+        <div class="who">${esc(f.artistas.join(' · '))}${f.edad?` · +${f.edad} años`:''}</div>
+        <div class="where"><i class="dot" style="background:${isla?.acento||'#999'}"></i>${esc(f.recintoNombre)} · ${esc(f.municipio)} · ${esc(isla?.nombre||'')}${f.verificar?' <span class="muted">(espacio por verificar)</span>':''}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${e.badge}${f.ticketUrl?`<a href="${esc(f.ticketUrl)}" target="_blank" rel="noopener">Venta oficial actual en Entradas Canarias</a>`:''}</div></div>
+      <div class="act"><div class="price">${e.price}</div>${e.btn}</div></article>`;};
+  let h=Object.entries(grupos).map(([d,fs])=>`<div class="day"><div class="d">${new Date(d+'T12:00').getDate()}<small>${fecha(d,{weekday:'long'})} · ${fecha(d,{month:'short'})}</small></div><div class="funcs">${fs.map(card).join('')}</div></div>`).join('');
+  const fic=list.filter(f=>f.ficticio);
+  if(fic.length) h+=`<div class="day"><div class="d" style="font-size:18px">Prueba<small>fuera del festival</small></div><div class="funcs">${fic.map(card).join('')}</div></div>`;
+  $('cartelera').innerHTML=h||'<div class="empty">No hay funciones en esta isla.</div>';
+  $('fuenteProg').textContent=`Programación: ${DATA.fuente}. Las ventas de esta página son de prueba; las oficiales siguen en Entradas Canarias.`;
+}
+$('islaFilter').addEventListener('click',e=>{const b=e.target.closest('[data-isla]');if(!b)return;S.isla=b.dataset.isla;save();renderCartelera();});
+$('cartelera').addEventListener('click',e=>{const b=e.target.closest('[data-buy]');if(!b)return; elegirFun(b.dataset.buy); show('comprar');});
+function elegirFun(id){ if(S.fun!==id){sel=[];selQty=0;stopHold();} S.fun=id; save(); renderHeader(); }
+
+/* ===================== VENTA ===================== */
+function seatsById(){const f=curFun(); return modo(f)==='numerada'?Object.fromEntries(gen(planDe(f)).asientos.map(a=>[a.codigo,a])):{};}
+const libre=a=>a&&!a.quitada&&!a.bloqueado&&!venta(curFun()).seats[a.codigo];
+function renderSale(){
+  const f=curFun(), m=modo(f), zs=zonasDe(f), p=esPrueba(f);
+  $('zonePrices').innerHTML=`<div class="stack" style="gap:2px"><b>${esc(f.titulo)}</b><span class="muted small">${fecha(f.fecha)} · ${esc(f.hora||'')} · ${esc(f.recintoNombre)}</span></div>`+
+    (m==='libre'?'':zs.map(z=>`<div class="zone"><span style="display:inline-flex;gap:8px;align-items:center"><i class="sw" style="background:${esc(z.color)}"></i>${esc(z.nombre)}</span><b>${eur(z.precio)}</b></div>`).join(''))+
+    (p&&m!=='libre'?'<div class="pr-flag">Precio oficial por confirmar: se usa un precio de prueba. Cámbialo en el Panel.</div>':'');
+  if(m==='libre'){
+    $('buyMain').innerHTML=`<div class="empty">Esta función es de acceso libre y no necesita entrada.<br><br><button class="btn ghost sm" type="button" data-go="cartelera">Volver a la cartelera</button></div>`;
+    $('cartEmpty').hidden=true; $('cartFull').hidden=true; return;
+  }
+  if(m==='numerada'){
+    const pl=planDe(f), g=gen(pl);
+    $('buyMain').innerHTML=`<div class="legend">${zs.map(z=>`<span><i class="sw" style="background:${esc(z.color)}"></i>${esc(z.nombre)}</span>`).join('')}<span><i class="sw" style="background:var(--sel)"></i>Tu selección</span><span><i class="sw" style="background:var(--sold)"></i>No disponible</span><span><i class="sw" style="background:repeating-linear-gradient(45deg,var(--hold) 0 3px,var(--sold) 3px 6px)"></i>Protocolo</span></div>
+      <div class="mapbox" id="saleMap" aria-label="Plano de butacas">${svgPlano(pl,g,'venta',{seats:venta(f).seats,sel})}</div>
+      <div class="tools"><span>Mejor sitio disponible para</span>
+        <select class="auto" id="bestN" aria-label="Número de entradas">${[1,2,3,4,5,6].map(n=>`<option ${n===(+bestN||2)?'selected':''}>${n}</option>`).join('')}</select><span>en</span>
+        <select class="auto" id="bestZ" aria-label="Zona"><option value="any">cualquier zona</option>${zs.map(z=>`<option value="${esc(z.codigo)}" ${bestZ===z.codigo?'selected':''}>${esc(z.nombre)}</option>`).join('')}</select>
+        <button class="btn sm" id="bestBtn" type="button">Buscar</button>
+        <span class="muted small">Plano a escala, visto desde el público. Borde punteado = acompañante PMR.</span></div>`;
+    $('cartEmpty').textContent='Elige tus butacas en el plano o pulsa «Buscar» para que la plataforma te asigne las mejores. Máximo 8 por compra.';
+  } else {
+    const disp=aforoGeneral(f)-venta(f).vendidas;
+    $('buyMain').innerHTML=`<div class="ga"><h2>Entrada general · sin butaca asignada</h2>
+      <p class="muted" style="margin:0">Este espacio todavía no tiene plano en la plataforma, así que se vende por aforo. Cuando subas su plano en «Planos» y lo asignes, pasará a numerada.</p>
+      <div class="stat"><span>Disponibles <b>${Math.max(0,disp)}</b> de <b>${aforoGeneral(f)}</b>${cfgDe(f).aforo?'':' (aforo de prueba)'}</span></div>
+      <div class="qty" role="group" aria-label="Número de entradas"><button type="button" data-q="-1" aria-label="Una menos">−</button><output id="qtyOut">${selQty||0}</output><button type="button" data-q="1" aria-label="Una más">+</button></div></div>`;
+    $('cartEmpty').textContent='Elige cuántas entradas quieres. Máximo 8 por compra.';
+  }
+  renderCart();
+}
+let bestN=2, bestZ='any';
+$('buyMain').addEventListener('click',e=>{
+  const go=e.target.closest('[data-go]'); if(go)return show(go.dataset.go);
+  const q=e.target.closest('[data-q]'); if(q){const f=curFun(); const disp=aforoGeneral(f)-venta(f).vendidas; const n=Math.max(0,Math.min(MAX,disp,(selQty||0)+(+q.dataset.q))); if(n===selQty&&+q.dataset.q>0)toast(disp<=selQty?'No quedan más entradas':`Máximo ${MAX} entradas por compra`); selQty=n; return afterSel();}
+  if(e.target.id==='bestBtn')return mejorSitio();
+  const s=e.target.closest('[data-c]'); if(s)toggle(s.dataset.c);
+});
+$('buyMain').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-c]')){e.preventDefault();toggle(e.target.closest('[data-c]').dataset.c);}});
+$('buyMain').addEventListener('change',e=>{if(e.target.id==='bestN')bestN=+e.target.value; if(e.target.id==='bestZ')bestZ=e.target.value;});
+function toggle(c){
+  const a=seatsById()[c]; const i=sel.indexOf(c);
+  if(i>=0)sel.splice(i,1);
+  else{ if(!libre(a))return; if(sel.length>=MAX)return toast(`Máximo ${MAX} entradas por compra`); sel.push(c); }
+  afterSel();
+}
+const nSel=()=>modo(curFun())==='numerada'?sel.length:(selQty||0);
+function afterSel(){ if(nSel()&&!holdEnd){holdEnd=Date.now()+HOLD_MIN*60000;timerId=setInterval(tick,500);tick();} if(!nSel())stopHold(); renderSale(); }
+function stopHold(){holdEnd=0;clearInterval(timerId);timerId=null;}
+function tick(){ const l=Math.max(0,holdEnd-Date.now()); $('clock').textContent=`${String(Math.floor(l/60000)).padStart(2,'0')}:${String(Math.floor(l/1000)%60).padStart(2,'0')}`;
+  if(!l){sel=[];selQty=0;stopHold();renderSale();toast('Se acabó el tiempo: las entradas vuelven a la venta');} }
+function mejorSitio(){
+  const n=bestN, z=bestZ, g=gen(planDe(curFun()));
+  const filas={}; g.asientos.forEach(a=>{(filas[a.seccion+'|'+a.fila]=filas[a.seccion+'|'+a.fila]||[]).push(a);});
+  const orden=Object.values(filas).sort((A,B)=>A[0].y-B[0].y);
+  for(const f of orden){
+    const fs=f.filter(a=>!a.quitada).sort((a,b)=>a.x-b.x); if(!fs.length)continue; const cx=(fs[0].x+fs[fs.length-1].x)/2; let best=null;
+    for(let i=0;i+n<=fs.length;i++){
+      const tramo=fs.slice(i,i+n);
+      if(!tramo.every(a=>libre(a)&&!sel.includes(a.codigo)&&a.tipo!=='silla_ruedas'&&(z==='any'||a.zona===z)))continue;
+      if(tramo.some((a,k)=>k&&a.x-tramo[k-1].x>a.ancho*1.6))continue;
+      const d=Math.abs((tramo[0].x+tramo[n-1].x)/2-cx); if(!best||d<best.d)best={d,tramo};
+    }
+    if(best){sel=best.tramo.map(a=>a.codigo);afterSel();return toast(`Te hemos asignado ${n>1?'butacas juntas':'butaca'} en la ${best.tramo[0].fila}`);}
+  }
+  toast('No quedan tantas butacas juntas en esa zona');
+}
+function totals(){
+  const f=curFun(), m=modo(f); let items;
+  if(m==='numerada'){const mp=seatsById(); items=sel.map(c=>mp[c]).map(a=>({...a,precio:zonaDe(f,a.zona).precio,label:`${a.fila} · ${a.numero}`}));}
+  else items=[...Array(selQty||0)].map(()=>({zona:'general',precio:precioGeneral(f),label:'Entrada general',fila:'General',numero:'—'}));
+  const base=items.reduce((t,a)=>t+a.precio,0), fees=items.length*(+S.gastos||0), total=base+fees, r=(+S.igic||0)/100;
+  return {f,items,base,fees,total,igic:total-total/(1+r)};
+}
+function renderCart(){
+  const n=nSel(); $('cartEmpty').hidden=!!n; $('cartFull').hidden=!n; if(!n)return;
+  const t=totals();
+  $('chips').innerHTML=modo(t.f)==='numerada'?t.items.map(a=>`<span class="chip">${esc(a.label)}<button type="button" data-rm="${a.codigo}" aria-label="Quitar ${esc(a.label)}">×</button></span>`).join(''):`<span class="chip">${n} × entrada general</span>`;
+  const byZ={}; t.items.forEach(a=>byZ[a.zona]=(byZ[a.zona]||0)+1);
+  $('lines').innerHTML=Object.entries(byZ).map(([z,c])=>`<div class="line"><span>${c} × ${esc(zonaDe(t.f,z).nombre)}</span><span>${eur(c*zonaDe(t.f,z).precio)}</span></div>`).join('')+
+   `<div class="line"><span>Gastos de gestión <span class="muted small">(${eur(S.gastos)}/entrada)</span></span><span>${eur(t.fees)}</span></div>
+    <div class="line total"><span>Total</span><span>${eur(t.total)}</span></div>
+    <div class="line muted small"><span>IGIC incluido (${S.igic} %)</span><span>${eur(t.igic)}</span></div>`;
+  $('payBtn').textContent=`Pagar ${eur(t.total)}`;
+}
+$('chips').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(b)toggle(b.dataset.rm);});
+$('clearBtn').addEventListener('click',()=>{sel=[];selQty=0;afterSel();});
+const B32='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', code=()=>[...Array(8)].map(()=>B32[Math.floor(Math.random()*32)]).join('');
+function sig(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return (h>>>0).toString(36).slice(0,4)}
+$('pay').addEventListener('submit',e=>{
+  e.preventDefault(); const err=$('payErr'), fail=m=>{err.hidden=false;err.textContent=m;};
+  if(!$('nm').value.trim()||!/^\S+@\S+\.\S+$/.test($('em').value))return fail('Revisa el nombre y el correo: ahí te llegan las entradas.');
+  if(!$('t1').checked)return fail('Para comprar tienes que aceptar las condiciones de compra.');
+  if($('cc').value.replace(/\s/g,'')!=='4242424242424242')return fail('En modo prueba usa la tarjeta 4242 4242 4242 4242.');
+  err.hidden=true; const b=$('payBtn'); b.disabled=true; b.textContent='Confirmando pago…';
+  setTimeout(()=>{
+    const t=totals(), f=t.f, v=venta(f), m=modo(f), oid='PED-'+code().slice(0,6);
+    let items=t.items;
+    if(m==='numerada') items=items.filter(a=>libre(a));
+    else items=items.slice(0,Math.max(0,aforoGeneral(f)-v.vendidas));
+    const iss=items.map(a=>{ if(m==='numerada')v.seats[a.codigo]='sold'; else v.vendidas++;
+      const z=zonaDe(f,a.zona); return {id:'TKT-'+code(),fun:f.id,codigo:a.codigo||null,label:a.label,fila:a.fila,numero:a.numero,zona:a.zona,zonaNombre:z.nombre,color:z.color,precio:a.precio,pedido:oid,comprador:$('nm').value,pmr:a.tipo==='silla_ruedas'};});
+    S.tickets.push(...iss);
+    S.orders.unshift({id:oid,fun:f.id,comprador:$('nm').value,n:iss.length,base:iss.reduce((s,x)=>s+x.precio,0),fees:iss.length*(+S.gastos||0)});
+    sel=[];selQty=0;stopHold();save(); b.disabled=false; $('t1').checked=false;
+    renderSale(); show('entradas'); toast(`Pago confirmado · ${iss.length} entrada${iss.length>1?'s':''} enviada${iss.length>1?'s':''} a ${$('em').value}`);
+  },1100);
+});
+
+/* ===================== ENTRADAS ===================== */
+const WIN=15000, slot=()=>Math.floor(Date.now()/WIN), payload=(tk,s=slot())=>`${tk.id}.${s}.${sig(tk.id+s)}`;
+let lastSlot=-1;
+function renderTickets(){
+  const T=S.tickets; $('tkCount').textContent=T.length?`(${T.length})`:'';
+  if($('v-entradas').hidden)return;
+  $('tickets').innerHTML=T.length?T.map(tk=>{const f=fun(tk.fun); return `<article class="tk" style="border-top:5px solid ${ISLAS[f.isla]?.acento||'var(--line)'}"><div class="top">
+      <span class="tag" style="justify-self:start;border-color:${esc(tk.color)};color:${esc(tk.color)}">${esc(tk.zonaNombre)}${tk.pmr?' · PMR':''}</span>
+      <h3 style="font-size:18px">${esc(f.titulo)}</h3><span class="muted small">${f.ficticio?'Prueba técnica':'ASOMBRA 2026'} · ${fecha(f.fecha)} · ${esc(f.hora||'')}<br>${esc(f.recintoNombre)} · ${esc(f.municipio)}</span>
+      <div class="seatinfo">${tk.codigo?`<span>Fila<b>${esc(tk.fila)}</b></span><span>${tk.pmr?'Espacio':'Butaca'}<b>${esc(String(tk.numero).replace('PMR ',''))}</b></span>`:'<span>Acceso<b>General</b></span>'}<span>Precio<b>${eur(tk.precio)}</b></span></div></div>
+      <div class="qr"><div class="qrbox" id="q-${tk.id}"></div><div class="bar"><i data-bar></i></div><span class="mono muted" style="font-size:11px">${tk.id} · ${tk.pedido}</span>${S.used[tk.id]?`<span class="tag" style="color:var(--ok);border-color:var(--ok)">Validada a las ${S.used[tk.id]}</span>`:''}</div></article>`;}).join('')
+    :'<div class="empty" style="grid-column:1/-1">Aún no hay entradas. Compra una desde la Cartelera con la tarjeta de prueba y aparecerá aquí, igual que en la cuenta del cliente.</div>';
+  drawQRs();
+}
+function drawQRs(){S.tickets.forEach(tk=>{const el=$('q-'+tk.id); if(!el)return; el.innerHTML='';
+  if(window.QRCode)new QRCode(el,{text:payload(tk),width:148,height:148,colorDark:'#131a28',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); else el.textContent=payload(tk);}); lastSlot=slot();}
+setInterval(()=>{ if(!$('v-entradas').hidden){const pr=1-(Date.now()%WIN)/WIN; document.querySelectorAll('[data-bar]').forEach(b=>b.style.width=pr*100+'%'); if(slot()!==lastSlot)drawQRs();} },250);
+
+/* ===================== ACCESO ===================== */
+const vendibles=()=>FUNCS.filter(f=>modo(f)!=='libre');
+function renderScan(){
+  $('doorFun').innerHTML=vendibles().map(f=>`<option value="${f.id}" ${f.id===S.door?'selected':''}>${fecha(f.fecha)} · ${esc(f.hora||'')} · ${esc(f.titulo)} · ${esc(f.recintoNombre)}</option>`).join('');
+  const f=fun(S.door)||vendibles()[0]; S.door=f.id;
+  $('doorTitle').textContent=`Puerta · ${f.recintoNombre}`;
+  $('inside').textContent=`Dentro: ${S.inside[f.id]||0}`;
+  const T=S.tickets;
+  $('scanList').innerHTML=T.length?T.map(tk=>{const tf=fun(tk.fun); return `<div class="li"><span><b>${esc(tk.label)}</b> <span class="muted">${esc(tf.titulo)} · ${fecha(tf.fecha)}</span> <span class="muted mono">${tk.id}</span>${S.used[tk.id]?' <span style="color:var(--ok)">✓</span>':''}</span><span style="display:flex;gap:6px"><button class="btn sm" type="button" data-scan="${tk.id}">Escanear</button><button class="btn ghost sm" type="button" data-old="${tk.id}">Captura</button></span></div>`;}).join('')
+    :'<div class="empty">Compra alguna entrada para poder probar la lectura en puerta.</div>';
+}
+$('doorFun').addEventListener('change',e=>{S.door=e.target.value;save();renderScan();res('idle','Esperando lectura','Puerta cambiada.');});
+function validar(raw){
+  const m=String(raw).trim().match(/^(TKT-[A-Z0-9]{8})(?:\.(\d+)\.([a-z0-9]{1,4}))?$/);
+  if(!m)return res('bad','Código no válido','No es una entrada de esta plataforma.');
+  const tk=S.tickets.find(t=>t.id===m[1]); if(!tk)return res('bad','Entrada no encontrada','Puede ser falsa o estar anulada.');
+  if(tk.fun!==S.door){const tf=fun(tk.fun); return res('bad','Es de otra función',`${tf.titulo} · ${fecha(tf.fecha)} · ${tf.recintoNombre}`);}
+  if(m[2]){const s=+m[2]; if(sig(tk.id+s)!==m[3])return res('bad','Código manipulado','La firma no coincide.'); if(Math.abs(slot()-s)>2)return res('warn','QR caducado','Parece una captura antigua: pide que abra la entrada en el móvil.');}
+  if(S.used[tk.id])return res('warn','Ya utilizada',`Entró a las ${S.used[tk.id]} · ${tk.label}`);
+  S.used[tk.id]=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'}); S.inside[tk.fun]=(S.inside[tk.fun]||0)+1; save(); renderScan();
+  res('ok','Adelante',`${tk.label} · ${tk.zonaNombre}${tk.pmr?' · acceso adaptado':''}`);
+}
+function res(k,t,s){$('res').className='result r-'+k;$('res').innerHTML=`<div>${esc(t)}<small>${esc(s)}</small></div>`;}
+$('manual').addEventListener('submit',e=>{e.preventDefault();validar($('code').value);});
+$('scanList').addEventListener('click',e=>{const a=e.target.closest('[data-scan]'),o=e.target.closest('[data-old]'); const id=a?a.dataset.scan:o?o.dataset.old:null; const tk=S.tickets.find(t=>t.id===id); if(!tk)return;
+  const p=a?payload(tk):payload(tk,slot()-4); $('code').value=p; validar(p);});
+
+/* ===================== PANEL ===================== */
+function renderPanel(){
+  if(!fun(S.panel)||modo(fun(S.panel))==='libre') S.panel=modo(curFun())!=='libre'?curFun().id:vendibles()[0].id;
+  const f=fun(S.panel), m=modo(f), v=venta(f);
+  $('panFun').innerHTML=vendibles().map(x=>`<option value="${x.id}" ${x.id===f.id?'selected':''}>${fecha(x.fecha)} · ${esc(x.titulo)} · ${esc(x.recintoNombre)}</option>`).join('');
+  const allT=S.tickets.length, allRev=S.orders.reduce((t,o)=>t+o.base,0);
+  $('festStat').innerHTML=`<span>Todo el festival: <b>${allT}</b> entradas online · <b>${eur(allRev)}</b></span>`;
+  let cap,sold,hold;
+  if(m==='numerada'){const viv=gen(planDe(f)).asientos.filter(a=>!a.quitada&&!a.bloqueado); cap=viv.length; sold=viv.filter(a=>v.seats[a.codigo]==='sold').length; hold=viv.filter(a=>v.seats[a.codigo]==='hold').length;}
+  else {cap=aforoGeneral(f); sold=v.vendidas; hold=0;}
+  const os=S.orders.filter(o=>o.fun===f.id), rev=os.reduce((t,o)=>t+o.base,0), fees=os.reduce((t,o)=>t+o.fees,0);
+  $('kpis').innerHTML=[['Vendidas',`${sold}<span class="muted" style="font-size:16px"> / ${cap}</span>`],['Ocupación',Math.round((sold+hold)/(cap||1)*100)+' %'],['Ingresos online',eur(rev)],['Gastos de gestión',eur(fees)]]
+    .map(([l,x])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${x}</div></div>`).join('');
+  $('ocuHint').textContent=m==='numerada'?'Vendidas · protocolo · libres':'Aforo general';
+  if(m==='numerada'){const viv=gen(planDe(f)).asientos.filter(a=>!a.quitada&&!a.bloqueado);
+    $('zbars').innerHTML=zonasDe(f).map(z=>{const zs=viv.filter(a=>a.zona===z.codigo),t=zs.length||1,s=zs.filter(a=>v.seats[a.codigo]==='sold').length,h=zs.filter(a=>v.seats[a.codigo]==='hold').length;
+      return `<div class="zb"><span><b>${esc(z.nombre)}</b> <span class="muted">${eur(z.precio)}</span></span><div class="track" role="img" aria-label="${s} vendidas de ${zs.length}"><i style="width:${s/t*100}%;background:${esc(z.color)}"></i><i style="width:${h/t*100}%;background:var(--hold)"></i></div><span class="mono small">${s}/${zs.length} · ${zs.length-s-h} libres</span></div>`}).join('');}
+  else $('zbars').innerHTML=`<div class="zb"><span><b>General</b> <span class="muted">${eur(precioGeneral(f))}</span></span><div class="track"><i style="width:${sold/(cap||1)*100}%;background:#5a6478"></i></div><span class="mono small">${sold}/${cap} · ${cap-sold} libres</span></div>`;
+  const pf=esPrueba(f)?'<div class="pr-flag">Sin precio oficial todavía: se muestran precios de prueba. Escribe aquí el precio real cuando lo tengas.</div>':'';
+  if(m==='numerada') $('funCfg').innerHTML=pf+planDe(f).zonas.map(z=>`<label class="f">${esc(z.nombre)} (€)<input type="number" min="0" step="0.5" data-pz="${esc(z.codigo)}" value="${cfgDe(f).precios?.[z.codigo]??''}" placeholder="${precioZona(f,z)}"></label>`).join('')+`<p class="muted small" style="margin:0">Plano: ${esc(planDe(f).recinto)}. Se cambia en «Planos».</p>`;
+  else $('funCfg').innerHTML=pf+`<div class="g2"><label class="f">Precio (€)<input type="number" min="0" step="0.5" data-pg value="${cfgDe(f).precio??''}" placeholder="${precioGeneral(f)}"></label><label class="f">Aforo<input type="number" min="1" data-af value="${cfgDe(f).aforo??''}" placeholder="${AFORO_PRUEBA} (prueba)"></label></div><p class="muted small" style="margin:0">Este espacio no tiene plano: se vende por aforo general.</p>`;
+  $('evFee').value=S.gastos; $('evTax').value=S.igic;
+  $('resetBox').innerHTML='<button class="btn danger sm" id="resetBtn" type="button">Reiniciar venta de esta función</button>';
+  $('orders').innerHTML=S.orders.length?S.orders.map(o=>{const of=fun(o.fun); return `<tr><td class="mono">${o.id}</td><td>${esc(of.titulo)} · ${fecha(of.fecha)}</td><td>${esc(o.comprador)}</td><td>${o.n}</td><td>${eur(o.base+o.fees)}</td><td>${eur(o.fees)}</td></tr>`;}).join('')
+    :'<tr><td colspan="6" class="muted">Aún no hay pedidos online.</td></tr>';
+}
+$('panFun').addEventListener('change',e=>{S.panel=e.target.value;save();renderPanel();});
+$('funCfg').addEventListener('input',e=>{const f=fun(S.panel), c=cfgDe(f), t=e.target;
+  if(t.dataset.pz){c.precios=c.precios||{}; c.precios[t.dataset.pz]=t.value===''?'':+t.value;}
+  if('pg' in t.dataset)c.precio=t.value===''?'':+t.value;
+  if('af' in t.dataset)c.aforo=t.value===''?'':+t.value;
+  save(); clearTimeout(cfgT); cfgT=setTimeout(()=>{const k=t.dataset.pz||('pg' in t.dataset?'pg':'af'); renderPanel(); renderHeader(); const el=$('funCfg').querySelector(t.dataset.pz?`[data-pz="${k}"]`:`[data-${k}]`); if(el){el.focus(); try{el.setSelectionRange(el.value.length,el.value.length);}catch(_){}}},500);});
+let cfgT;
+$('evFee').addEventListener('input',e=>{S.gastos=+e.target.value;save();});
+$('evTax').addEventListener('input',e=>{S.igic=+e.target.value;save();});
+$('simBtn').addEventListener('click',()=>{simular(fun(S.panel));save();renderPanel();toast('Ventas previas simuladas en esta función');});
+$('resetBox').addEventListener('click',e=>{
+  if(e.target.id==='resetBtn'){$('resetBox').innerHTML='<span class="confirm">¿Borrar ventas, pedidos y entradas de esta función? <button class="btn danger sm" type="button" data-y>Sí</button><button class="btn ghost sm" type="button" data-n>No</button></span>';return;}
+  if('y' in e.target.dataset){const id=S.panel; delete S.ventas[id]; S.tickets=S.tickets.filter(t=>t.fun!==id); S.orders=S.orders.filter(o=>o.fun!==id); delete S.inside[id]; if(S.fun===id){sel=[];selQty=0;stopHold();} save(); renderPanel(); renderTickets(); toast('Venta de la función reiniciada');}
+  if('n' in e.target.dataset)renderPanel();
+});
+$('csvBtn').addEventListener('click',()=>{const rows=[['entrada','pedido','funcion','fecha','recinto','comprador','fila','butaca','zona','precio','validada']].concat(S.tickets.map(t=>{const f=fun(t.fun);return [t.id,t.pedido,f.titulo,f.fecha,f.recintoNombre,t.comprador,t.fila,t.numero,t.zonaNombre,t.precio.toFixed(2),S.used[t.id]||''];}));
+  copiar(rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';')).join('\n'),'CSV copiado: pégalo en Excel');});
+function copiar(txt,ok){navigator.clipboard.writeText(txt).then(()=>toast(ok)).catch(()=>{$('impTxt').value=txt;show('planos');$('impTxt').select();toast('Tu navegador no deja copiar: lo tienes seleccionado en el cuadro «Datos del plano»');});}
+
+/* ===================== EDITOR DE PLANOS ===================== */
+let tool='zona';
+const edPlan=()=>planById(S.editando)||S.planos[0];
+const venueDe=pid=>Object.entries(S.recintos).filter(([,p])=>p===pid).map(([v])=>RECINTOS.find(r=>r.id===v)?.nombre||v);
+function renderPlanSel(){
+  $('planSel').innerHTML=S.planos.map(p=>{const vs=venueDe(p.id); return `<option value="${p.id}" ${p.id===S.editando?'selected':''}>${esc((p.recinto||'Sin recinto')+' — '+p.nombre)}${vs.length?' · en uso':''}</option>`;}).join('');
+  $('delBox').innerHTML='<button class="btn danger sm" id="delPlan" type="button">Eliminar</button>';
+}
+function renderEditor(){
+  const p=edPlan(); S.editando=p.id; renderPlanSel();
+  $('pNombre').value=p.nombre;$('pRecinto').value=p.recinto||'';$('pFuente').value=p.fuente||'';$('pAfB').value=p.aforo?.butacas??'';$('pAfP').value=p.aforo?.pmr??'';
+  $('pNotas').hidden=!p.notas; $('pNotas').textContent=p.notas||'';
+  renderAssign(); renderZonesEd(); renderBlocksEd(); renderPreview();
+}
+function renderAssign(){
+  const p=edPlan(), cur=Object.entries(S.recintos).find(([,pid])=>pid===p.id)?.[0];
+  $('assignVenue').innerHTML=RECINTOS.map(r=>`<option value="${r.id}" ${r.id===cur?'selected':''}>${esc(r.nombre)} · ${esc(ISLAS[r.isla]?.nombre||'')}${S.recintos[r.id]&&S.recintos[r.id]!==p.id?' (ya tiene otro plano)':''}</option>`).join('');
+  const vs=venueDe(p.id);
+  $('assignInfo').textContent=vs.length?`En uso para: ${vs.join(', ')} (${FUNCS.filter(f=>S.recintos[f.recinto]===p.id).length} funciones).`:'Este plano no se usa todavía en ninguna función.';
+  $('assignBox').innerHTML='<button class="btn sm" id="assignBtn" type="button">Asignar plano</button>';
+}
+$('assignBox').addEventListener('click',e=>{
+  const p=edPlan(), vid=$('assignVenue').value, afect=FUNCS.filter(f=>f.recinto===vid);
+  if(e.target.id==='assignBtn'){
+    if(!comprobar(p,gen(p)).ok)return toast('Corrige los errores de la comprobación antes de usar este plano para vender');
+    $('assignBox').innerHTML=`<span class="confirm">Se reinicia la venta de ${afect.length} función${afect.length===1?'':'es'} en este espacio. <button class="btn danger sm" type="button" data-y>Asignar</button><button class="btn ghost sm" type="button" data-n>No</button></span>`; return;}
+  if('y' in e.target.dataset){ S.recintos[vid]=p.id; afect.forEach(f=>{delete S.ventas[f.id]; S.tickets=S.tickets.filter(t=>t.fun!==f.id); S.orders=S.orders.filter(o=>o.fun!==f.id);});
+    if(afect.some(f=>f.id===S.fun)){sel=[];selQty=0;stopHold();} save(); renderEditor(); renderHeader(); toast('Plano asignado: esas funciones ya se venden numeradas');}
+  if('n' in e.target.dataset)renderAssign();
+});
+function renderZonesEd(){
+  const p=edPlan();
+  $('zonesEd').innerHTML=`<div class="zrow mini-h"><span>Color</span><span>Nombre</span><span>Precio €</span><span></span></div>`+p.zonas.map((z,i)=>`<div class="zrow">
+    <input type="color" value="${esc(z.color)}" data-z="${i}" data-k="color" aria-label="Color de ${esc(z.nombre)}">
+    <input type="text" value="${esc(z.nombre)}" data-z="${i}" data-k="nombre" aria-label="Nombre de la zona">
+    <input type="number" value="${z.precio}" min="0" step="0.5" data-z="${i}" data-k="precio" aria-label="Precio de ${esc(z.nombre)}">
+    <button class="icon" type="button" data-zdel="${i}" aria-label="Quitar zona ${esc(z.nombre)}" title="Quitar zona">×</button></div>`).join('');
+  $('toolZone').innerHTML=p.zonas.map(z=>`<option value="${esc(z.codigo)}">${esc(z.nombre)}</option>`).join('');
+}
+$('zonesEd').addEventListener('input',e=>{const t=e.target,i=t.dataset.z;if(i===undefined)return; const z=edPlan().zonas[i]; z[t.dataset.k]=t.type==='number'?+t.value:t.value; changed(false);});
+$('zonesEd').addEventListener('change',()=>renderBlocksEd());
+$('zonesEd').addEventListener('click',e=>{const b=e.target.closest('[data-zdel]');if(!b)return;const p=edPlan(); if(p.zonas.length<=1)return toast('El plano necesita al menos una zona'); p.zonas.splice(+b.dataset.zdel,1); renderZonesEd(); renderBlocksEd(); changed(true);});
+$('addZone').addEventListener('click',()=>{const p=edPlan(); const cols=['#c2410c','#9333ea','#0e7490','#4d7c0f','#be185d']; p.zonas.push({codigo:'z'+uid(),nombre:'Zona '+(p.zonas.length+1),color:cols[p.zonas.length%cols.length],precio:10}); renderZonesEd(); renderBlocksEd(); changed(true);});
+function zoneOpts(s){return edPlan().zonas.map(z=>`<option value="${esc(z.codigo)}" ${z.codigo===s?'selected':''}>${esc(z.nombre)}</option>`).join('');}
+const miniRows=(b,key,cols,empty)=>{const L=b[key]||[]; return (L.length?`<div class="mini-row mini-h">${cols.map(c=>`<span>${c[1]}</span>`).join('')}${cols.length<3?'<span></span>':''}<span></span></div>`:(empty||''))+
+  L.map((t,j)=>`<div class="mini-row" data-l="${key}" data-j="${j}">${cols.map(c=>c[2]==='zona'?`<select data-lk="${c[0]}" aria-label="${c[1]}">${zoneOpts(t[c[0]])}</select>`:`<input type="${c[2]}" ${c[2]==='number'?'min="1"':''} data-lk="${c[0]}" value="${esc(t[c[0]])}" aria-label="${c[1]}">`).join('')}${cols.length<3?'<span></span>':''}<button class="icon" type="button" data-del="${key}" data-j="${j}" aria-label="Quitar">×</button></div>`).join('');};
+function renderBlocksEd(){
+  const p=edPlan(), open=new Set([...document.querySelectorAll('#blocksEd details[open]')].map(d=>d.dataset.b));
+  if(!document.querySelector('#blocksEd details')) p.bloques.forEach((b,i)=>{if(!i)open.add(b.id);});
+  $('blocksEd').innerHTML=p.bloques.map((b,i)=>`<details class="blk" data-b="${b.id}" ${open.has(b.id)?'open':''}><summary><span>${esc(b.nombre||'Bloque')} <span class="muted small">· ${esc(b.prefijo)}${b.desde} a ${esc(b.prefijo)}${b.hasta} · ${b.butacas} por fila</span></span><button class="icon" type="button" data-bdel="${i}" aria-label="Quitar bloque" title="Quitar bloque">×</button></summary>
+   <div class="blk-body" data-bi="${i}">
+    <div class="g2"><label class="f">Nombre<input type="text" data-k="nombre" value="${esc(b.nombre)}"></label><label class="f">Código interno<input type="text" data-k="codigo" value="${esc(b.codigo)}"></label></div>
+    <div class="g3"><label class="f">Primera fila<input type="number" min="1" data-k="desde" value="${b.desde}"></label><label class="f">Última fila<input type="number" min="1" data-k="hasta" value="${b.hasta}"></label><label class="f">Prefijo<input type="text" data-k="prefijo" value="${esc(b.prefijo)}"></label></div>
+    <div class="g2"><label class="f">Butacas por fila<input type="number" min="1" data-k="butacas" value="${b.butacas}"></label><label class="f">Pasillos detrás de las filas<input type="text" data-k="pasillos" value="${esc(b.pasillos)}" placeholder="7, 16"></label></div>
+    <div class="g2"><label class="f">Numeración<select data-k="numeracion">
+        <option value="derecha" ${b.numeracion==='derecha'?'selected':''}>1, 2, 3… desde la derecha</option>
+        <option value="izquierda" ${b.numeracion==='izquierda'?'selected':''}>1, 2, 3… desde la izquierda</option>
+        <option value="pares_impares" ${b.numeracion==='pares_impares'?'selected':''}>Pares e impares desde el centro</option></select></label>
+      <label class="f">Pasillo central (cm)<input type="number" min="0" step="10" data-k="pasilloCentral" value="${b.pasilloCentral||0}"></label></div>
+    ${b.numeracion==='pares_impares'?`<label class="f">Impares a la<select data-k="imparesA"><option value="derecha" ${b.imparesA!=='izquierda'?'selected':''}>derecha del espectador</option><option value="izquierda" ${b.imparesA==='izquierda'?'selected':''}>izquierda del espectador</option></select></label>`:''}
+    <div class="mini"><div class="sec-h"><span class="mini-h">Zonas por filas</span><button class="btn ghost sm" type="button" data-add="tramos">Añadir tramo</button></div>
+      ${miniRows(b,'tramos',[['desde','Desde fila','number'],['hasta','Hasta fila','number'],['zona','Zona','zona']],'<span class="muted small">Sin tramos: las butacas quedarán sin zona.</span>')}</div>
+    <div class="mini"><div class="sec-h"><span class="mini-h">Espacios para silla de ruedas</span><button class="btn ghost sm" type="button" data-add="pmr">Añadir</button></div>
+      ${miniRows(b,'pmr',[['fila','Fila','number'],['sustituye','Sustituye a','text'],['cantidad','Espacios','number']])}</div>
+    <div class="mini"><div class="sec-h"><span class="mini-h">Butacas que no existen</span><button class="btn ghost sm" type="button" data-add="quitar">Añadir</button></div>
+      ${miniRows(b,'quitar',[['fila','Fila','number'],['butacas','Butacas','text']])}</div>
+    <div class="mini"><div class="sec-h"><span class="mini-h">Filas con otro número de butacas</span><button class="btn ghost sm" type="button" data-add="excepciones">Añadir</button></div>
+      ${miniRows(b,'excepciones',[['fila','Fila','number'],['butacas','Butacas','number']])}</div>
+   </div></details>`).join('');
+}
+$('blocksEd').addEventListener('input',e=>{
+  const body=e.target.closest('[data-bi]'); if(!body)return; const b=edPlan().bloques[+body.dataset.bi]; const t=e.target;
+  const v=t.type==='number'?(t.value===''?'':+t.value):t.value;
+  if(t.dataset.k){b[t.dataset.k]=v; if(t.dataset.k==='numeracion')renderBlocksEd();}
+  else if(t.dataset.lk){const r=t.closest('[data-l]'); b[r.dataset.l][+r.dataset.j][t.dataset.lk]=v;}
+  changed(false);
+});
+$('blocksEd').addEventListener('change',e=>{ if(['nombre','desde','hasta','butacas','prefijo'].includes(e.target.dataset.k))renderBlocksEd(); });
+$('blocksEd').addEventListener('click',e=>{
+  const p=edPlan();
+  const bd=e.target.closest('[data-bdel]'); if(bd){e.preventDefault(); if(p.bloques.length<=1)return toast('El plano necesita al menos un bloque'); p.bloques.splice(+bd.dataset.bdel,1); renderBlocksEd(); return changed(true);}
+  const body=e.target.closest('[data-bi]'); if(!body)return; const b=p.bloques[+body.dataset.bi];
+  const add=e.target.closest('[data-add]'), del=e.target.closest('[data-del]');
+  if(add){const k=add.dataset.add; b[k]=b[k]||[]; const last=b.tramos?.[b.tramos.length-1];
+    b[k].push(k==='tramos'?{desde:last?+last.hasta+1:+b.desde,hasta:+b.hasta,zona:p.zonas[0].codigo}:k==='pmr'?{fila:+b.hasta,sustituye:'1, 2',cantidad:1}:k==='quitar'?{fila:+b.desde,butacas:'1'}:{fila:+b.desde,butacas:+b.butacas-2}); renderBlocksEd(); changed(true);}
+  if(del){b[del.dataset.del].splice(+del.dataset.j,1); renderBlocksEd(); changed(true);}
+});
+$('addBlock').addEventListener('click',()=>{const p=edPlan(); const last=p.bloques[p.bloques.length-1];
+  p.bloques.push({id:'b'+uid(),nombre:'Anfiteatro',codigo:'ANF'+(p.bloques.length+1),desde:1,hasta:5,prefijo:'A-',butacas:last?.butacas||20,numeracion:last?.numeracion||'derecha',imparesA:last?.imparesA||'derecha',pasilloCentral:last?.pasilloCentral||0,pasillos:'',tramos:[{desde:1,hasta:5,zona:p.zonas[p.zonas.length-1].codigo}],excepciones:[],quitar:[],pmr:[]});
+  renderBlocksEd(); const ds=document.querySelectorAll('#blocksEd details'); ds[ds.length-1].open=true; changed(true);});
+[['pNombre','nombre'],['pRecinto','recinto'],['pFuente','fuente']].forEach(([id,k])=>$(id).addEventListener('input',e=>{edPlan()[k]=e.target.value;changed(false);renderPlanSel();}));
+['pAfB','pAfP'].forEach(id=>$(id).addEventListener('input',()=>{edPlan().aforo={butacas:+$('pAfB').value||0,pmr:+$('pAfP').value||0};changed(false);}));
+let pend=null;
+function changed(now){ save(); clearTimeout(pend); pend=setTimeout(()=>{regen(edPlan());renderPreview(); const f=curFun(); if(planDe(f)?.id===edPlan().id){const ids=new Set(gen(planDe(f)).asientos.map(a=>a.codigo)); sel=sel.filter(c=>ids.has(c)); if(!nSel())stopHold(); renderHeader();}},now?0:220); }
+function renderPreview(){
+  const p=edPlan(), g=gen(p), c=comprobar(p,g);
+  $('edLegend').innerHTML=p.zonas.map(z=>`<span><i class="sw" style="background:${esc(z.color)}"></i>${esc(z.nombre)} · ${g.asientos.filter(a=>!a.quitada&&a.zona===z.codigo).length}</span>`).join('')+'<span><i class="sw" style="border:2px dashed var(--line)"></i>Quitada</span><span><i class="sw" style="background:var(--sold)"></i>Bloqueo técnico (atenuada)</span>';
+  $('edMap').innerHTML=g.asientos.length?svgPlano(p,g,'editor',{}):'<div class="empty">Añade un bloque de filas para empezar a dibujar.</div>';
+  $('edStat').innerHTML=`<span>Butacas <b>${c.but}</b></span><span>PMR <b>${c.pmr}</b></span><span>Bloqueadas <b>${c.bl}</b></span><span>A la venta <b>${c.vend}</b></span>`;
+  $('report').innerHTML=(c.ok?`<div class="o">✓ El plano cuadra con el aforo oficial y se puede usar para vender.</div>`:'')+c.err.map(t=>`<div class="e">✕ ${esc(t)}</div>`).join('')+c.av.map(t=>`<div class="a">! ${esc(t)}</div>`).join('');
+}
+$('toolSeg').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b)return;tool=b.dataset.t;document.querySelectorAll('#toolSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('toolZone').hidden=tool!=='zona';});
+function editSeat(c){
+  const p=edPlan(), a=gen(p).asientos.find(x=>x.codigo===c); if(!a)return; p.ajustes=p.ajustes||{}; const j=p.ajustes[c]||(p.ajustes[c]={});
+  if(tool==='zona')j.zona=$('toolZone').value;
+  else if(tool==='bloqueo'){j.bloqueado=!a.bloqueado; if(!j.bloqueado)delete j.bloqueado;}
+  else if(tool==='quitar'){j.quitada=!a.quitada; if(!j.quitada)delete j.quitada;}
+  else if(a.tipo==='silla_ruedas')toast('Los espacios PMR se cambian en «Espacios para silla de ruedas» del bloque');
+  else {const t=tool==='acompanante'?'acompanante':'visibilidad_reducida'; if(a.tipo===t)delete j.tipo; else j.tipo=t;}
+  if(!Object.keys(j).length)delete p.ajustes[c];
+  changed(true);
+}
+const clickSeat=(e,fn)=>{const t=e.target.closest('[data-c]'); if(t)fn(t.dataset.c);};
+$('edMap').addEventListener('click',e=>clickSeat(e,editSeat));
+$('edMap').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();clickSeat(e,editSeat);}});
+$('clearAdj').addEventListener('click',()=>{edPlan().ajustes={};changed(true);toast('Ajustes a mano deshechos; queda solo lo que sale de los bloques');});
+$('planSel').addEventListener('change',e=>{S.editando=e.target.value;save();renderEditor();});
+$('newPlan').addEventListener('click',()=>{const p={id:'p'+uid(),nombre:'Aforo completo',recinto:'Nuevo recinto',fuente:'',aforo:{butacas:0,pmr:0},
+  zonas:[{codigo:'general',nombre:'General',color:'#1b78b5',precio:15}],
+  bloques:[{id:'b'+uid(),nombre:'Patio de butacas',codigo:'PLATEA',desde:1,hasta:10,prefijo:'F-',butacas:16,numeracion:'derecha',imparesA:'derecha',pasilloCentral:0,pasillos:'',tramos:[{desde:1,hasta:10,zona:'general'}],excepciones:[],quitar:[],pmr:[]}],ajustes:{}};
+  S.planos.push(p);S.editando=p.id;save();renderEditor();toast('Plano nuevo creado: ajusta los bloques a tu recinto');});
+$('dupPlan').addEventListener('click',()=>{const p=clone(edPlan());p.id='p'+uid();p.nombre+=' (copia)';S.planos.push(p);S.editando=p.id;save();renderEditor();toast('Plano duplicado');});
+$('delBox').addEventListener('click',e=>{
+  if(e.target.id==='delPlan'){ if(S.planos.length<=1)return toast('Tiene que quedar al menos un plano'); if(venueDe(edPlan().id).length)return toast('Este plano está en uso: asigna otro a ese espacio antes de eliminarlo');
+    $('delBox').innerHTML='<span class="confirm">¿Eliminar este plano? <button class="btn danger sm" type="button" data-y>Sí</button><button class="btn ghost sm" type="button" data-n>No</button></span>'; return;}
+  if('y' in e.target.dataset){S.planos=S.planos.filter(p=>p.id!==S.editando);S.editando=S.planos[0].id;save();renderEditor();}
+  if('n' in e.target.dataset)renderPlanSel();
+});
+$('expBtn').addEventListener('click',()=>{const p=edPlan(), g=gen(p);
+  const out={formato:'plano-taquilla/1',plano:p,butacas:g.asientos.filter(a=>!a.quitada).map(({codigo,seccion,fila,numero,zona,tipo,bloqueado,x,y,ancho})=>({codigo,seccion,fila,numero,zona,tipo,bloqueado,x:Math.round(x),y:Math.round(y),ancho:Math.round(ancho)}))};
+  const txt=JSON.stringify(out,null,1); $('impTxt').value=txt; copiar(txt,'Plano copiado: pégalo en Claude Code o guárdalo');});
+$('impBtn').addEventListener('click',()=>{try{const d=JSON.parse($('impTxt').value); const p=d.plano||d; if(!p.bloques||!p.zonas)throw new Error('faltan bloques o zonas');
+  p.id='p'+uid(); p.ajustes=p.ajustes||{}; p.bloques.forEach(b=>{b.id=b.id||'b'+uid();b.quitar=b.quitar||[];}); S.planos.push(p); S.editando=p.id; save(); renderEditor(); toast('Plano importado');}
+  catch(err){toast('No se pudo importar: el texto no tiene el formato de un plano ('+err.message+')');}});
+
+/* ===================== NAVEGACIÓN ===================== */
+const VISTAS=['cartelera','comprar','entradas','acceso','panel','planos'];
+function show(v){document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v));
+  document.querySelectorAll('.view').forEach(s=>s.hidden=s.id!=='v-'+v);
+  if(v==='cartelera')renderCartelera(); if(v==='comprar')renderSale(); if(v==='entradas')renderTickets(); if(v==='acceso')renderScan(); if(v==='panel')renderPanel(); if(v==='planos')renderEditor();
+  save(); try{history.replaceState(null,'','#'+v);}catch(e){} }
+document.querySelector('nav.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.v);});
+let tt; function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,3600);}
+
+renderHeader(); renderTickets();
+const h=(location.hash||'').slice(1); show(VISTAS.includes(h)?h:'cartelera');
+window.__test={S,gen,comprobar,planById,FUNCS,modo,fun};
+})();
+</script>
