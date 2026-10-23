@@ -1,0 +1,46 @@
+# Decisiones
+
+Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y cómo cambiarlo. Las más recientes, al final.
+
+## Valores por defecto del encargo (punto 10)
+
+| Pendiente | Valor que se usa | Dónde se cambia |
+|---|---|---|
+| Nombre comercial de la plataforma | «Taquilla» | Textos de `apps/web` (cabecera, título) y `CORREO_REMITENTE` en `.env` |
+| Entidad que vende ASOMBRA (cuenta de Stripe) | Organizador de prueba «ASOMBRA (coproducción Grupo Livon · Héctor Sansegundo)», sin cuenta de Stripe real | Panel → Organizador (datos fiscales y conexión con Stripe) |
+| Tipo de IGIC | 7 %, marcado «pendiente de la asesoría» | Panel → Organizador → Venta |
+| Gastos de gestión | 1 € por entrada | Panel → Organizador → Venta |
+| Precios sin dato | La función no se puede poner a la venta hasta tener precio en todas sus zonas | Panel → Funciones → Precios |
+| Numeración del anfiteatro de Puerto del Rosario | A-1 a A-5, impares a la izquierda | Editor de planos (bloque «Anfiteatro») |
+| Acompañantes PMR en Puerto del Rosario | Sin marcar; la comprobación lo avisa | Editor de planos → herramienta «Acompañante» |
+| F-17-4 de Antigua como acompañante | Sí (supuesto) | Editor de planos |
+| Dominio | Ninguno, todo en local | `URL_PUBLICA` en `.env` cuando se despliegue |
+| ¿ASOMBRA 2026 se vende aquí? | No: sigue en Entradas Canarias; aquí solo datos de prueba | — |
+
+## Fase 1 · Base
+
+**D-001 · El repositorio de trabajo.** El encargo se pegó desde un paquete en Descargas, pero ya existía `Procreartes/taquilla` en GitHub con ese mismo material. Se trabaja sobre ese repositorio (clonado en `Documentos/IA/ProyectosIA/taquilla`).
+
+**D-002 · npm workspaces en lugar de pnpm o turborepo.** Node ya trae npm; así Naroe no tiene que instalar nada más. Si algún día el monorepo crece mucho, se puede pasar a pnpm sin tocar el código.
+
+**D-003 · Fastify en lugar de NestJS.** El encargo dejaba elegir. Fastify es más ligero, muy rápido (importa para aguantar picos de venta) y con menos «magia», lo que facilita revisar la seguridad. Cambiarlo supondría reescribir las rutas, no la lógica (que vive en `packages/dominio` y en funciones puras).
+
+**D-004 · SQL escrito a mano y migraciones `.sql` numeradas, sin ORM.** Lo crítico (reservas, emisión de entradas, liquidaciones) depende de transacciones e índices concretos de PostgreSQL; con SQL a mano se ve exactamente qué se ejecuta. Las migraciones se aplican solas al arrancar la API (`npm run migrar` también lo hace).
+
+**D-005 · Modo demostración sin Docker.** En el ordenador de trabajo no hay Docker. Para poder probarlo todo (y para que Naroe pueda verlo con un solo comando aunque no tenga Docker) la API, sin `DATABASE_URL`, usa **PGlite** (PostgreSQL real en WebAssembly, guardado en `.datos-locales/`) y, sin `REDIS_URL`, almacenes en memoria con la misma interfaz que los de Redis. `docker compose up` sigue siendo el modo completo. En CI se ejecutan los tests también contra PostgreSQL 16 y Redis 7 reales.
+
+**D-006 · Versiones de dependencias.** Se han elegido versiones estables y con más de dos semanas publicadas (Next 15.5, React 19.1, TypeScript 5.9, Vitest 3.2, Fastify 5) en lugar de las últimas mayores recién salidas, para evitar sorpresas. Se forzó `postcss` a 8.5.31 (dependencia interna de Next) porque la versión que traía tenía avisos de seguridad.
+
+**D-007 · Contraseñas con scrypt (incluido en Node)** en lugar de argon2 (necesita compilar módulos nativos y suele dar guerra en Windows). Parámetros: N=16384, r=8, p=1.
+
+**D-008 · Sesiones con cookie `HttpOnly` y token aleatorio**, guardando en base de datos solo su huella SHA-256. Duran 12 horas. Protección CSRF: cookie `SameSite=Lax` + rechazo de peticiones que cambian datos con cabecera `Origin` de otro sitio.
+
+**D-009 · Verificación en dos pasos (TOTP)** con cualquier aplicación de autenticación. El secreto se guarda cifrado (AES-256-GCM). Se puede exigir a todo el equipo con `EXIGIR_2FA=true` (recomendado en producción). Quien entra con Microsoft 365 no pasa por el TOTP propio: lo cubre la verificación de Microsoft.
+
+**D-010 · Microsoft 365 (Entra ID) sin altas automáticas.** El acceso con Microsoft solo funciona para personas que ya estén dadas de alta en el equipo de algún organizador (se casan por correo la primera vez y luego por el identificador de Entra). Así nadie de la organización entra «por estar en el tenant». Se activa rellenando `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID` y `ENTRA_CLIENT_SECRET`.
+
+**D-011 · Superadministración de plataforma.** Existe un rol de plataforma (`superadmin`) que puede dar de alta organizadores y entrar en cualquiera como administración. Es para el equipo que opera Taquilla, no para los organizadores.
+
+**D-012 · Un organizador siempre tiene al menos una persona con rol de administración.** El sistema impide quitar o rebajar al último.
+
+**D-013 · Panel en español; web pública en español, inglés y alemán.** El equipo interno trabaja en español. La traducción del panel queda para más adelante si entran clientes externos que la pidan.

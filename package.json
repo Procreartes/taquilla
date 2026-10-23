@@ -1,0 +1,31 @@
+{
+  "name": "taquilla",
+  "private": true,
+  "description": "Plataforma propia de venta de entradas (Grupo Livon · ProCreArtes)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "demo": "npm run semilla -w @taquilla/api && concurrently -k -n api,web -c blue,magenta \"npm run dev -w @taquilla/api\" \"npm run dev -w @taquilla/web\"",
+    "dev": "concurrently -k -n api,web -c blue,magenta \"npm run dev -w @taquilla/api\" \"npm run dev -w @taquilla/web\"",
+    "migrar": "npm run migrar -w @taquilla/api",
+    "semilla": "npm run semilla -w @taquilla/api",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p packages/dominio --noEmit && tsc -p apps/api --noEmit && npm run typecheck -w @taquilla/web --if-present",
+    "build": "npm run build -w @taquilla/web"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "concurrently": "^9.2.1",
+    "typescript": "~5.9.3",
+    "vitest": "~3.2.7"
+  },
+  "overrides": {
+    "postcss": "^8.5.31"
+  }
+}

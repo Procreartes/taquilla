@@ -1,0 +1,9 @@
+{
+  "name": "Taquilla",
+  "short_name": "Taquilla",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f9",
+  "theme_color": "#131a28",
+  "icons": [{ "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
