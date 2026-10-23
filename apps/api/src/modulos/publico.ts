@@ -10,6 +10,7 @@ import { verificarTurnstile } from '../infra/turnstile';
 import { cancelarReserva, crearReserva, ocupacion, pedidoPorToken, prepararPago, resumenPedido } from '../servicios/venta';
 import { zonasDeFuncion } from './eventos';
 import { facturaHtml } from '../servicios/factura';
+import { llavesEntradas, pdfEntradas } from '../servicios/entradas';
 import { DOCUMENTOS_LEGALES, plantillaLegal } from '../servicios/legal';
 
 const uuid = z.string().uuid();
@@ -131,6 +132,23 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     if (!p.numero_factura) throw noEncontrado('Factura');
     reply.header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'");
     return reply.type('text/html; charset=utf-8').send(facturaHtml(p));
+  });
+
+  // Llaves de rotación del QR (solo de las entradas de este pedido)
+  app.get('/api/publico/pedidos/:token/llaves', async (req, reply) => {
+    const { token } = z.object({ token: z.string().max(100) }).parse(req.params);
+    const id = await pedidoPorToken(ctx.db, token);
+    reply.header('cache-control', 'no-store');
+    const entradas = await ctx.db.query<{ codigo: string; funcion_id: string }>(`select codigo, funcion_id from entradas where pedido_id = $1 and estado = 'valida'`, [id]);
+    return llavesEntradas(ctx, entradas);
+  });
+
+  app.get('/api/publico/pedidos/:token/pdf', async (req, reply) => {
+    const { token } = z.object({ token: z.string().max(100) }).parse(req.params);
+    const p = await resumenPedido(ctx.db, await pedidoPorToken(ctx.db, token));
+    if (!p.entradas.length) throw noEncontrado('Entradas');
+    reply.header('content-disposition', `attachment; filename="entradas-${p.codigo}.pdf"`).header('cache-control', 'no-store');
+    return reply.type('application/pdf').send(await pdfEntradas(ctx, p));
   });
 
   app.post('/api/publico/pedidos/:token/pagar', limiteCompra, async (req) => {

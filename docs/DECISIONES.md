@@ -92,3 +92,19 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-033 · «Mejor sitio» reserva directamente.** Al buscar mejor sitio, la plataforma elige y reserva a la vez (en el servidor), para que nadie se lo quite entre que se calcula y se reserva.
 
 **D-034 · Datos de procedencia opcionales** (código postal, municipio, isla, país) para los informes agregados de público. Consentimientos separados: condiciones y privacidad (obligatorios), novedades del organizador y novedades de la plataforma (opcionales, desmarcados).
+
+## Fase 5 · Entradas y puerta
+
+**D-035 · El QR rotatorio se calcula en el móvil con una llave por entrada**, derivada del secreto del servidor. Así funciona aunque el móvil del cliente se quede sin cobertura en la cola, y el secreto maestro nunca sale del servidor.
+
+**D-036 · La puerta guarda la huella de la firma estática, no la firma.** Un dispositivo de puerta perdido no permite fabricar QR estáticos válidos. (Sí lleva las llaves de rotación de esa función, necesarias para validar sin conexión.)
+
+**D-037 · El QR incluye el código de la función** (8 caracteres) para poder decir «es de otra función, y cuál» incluso sin conexión.
+
+**D-038 · Sin conexión, gana la primera lectura.** Al sincronizar, si la entrada ya estaba usada, la lectura se marca como «doble acceso» para revisarla. Las sincronizaciones se pueden repetir sin efectos duplicados.
+
+**D-039 · «Dentro» cuenta entradas usadas** (no hay control de salida). Si hace falta controlar salidas y reentradas, se añade un botón «Salida» en la app de puerta.
+
+**D-040 · Cuenta de cliente sin contraseña** (enlace mágico por correo, cookie firmada de 30 días). Ver `docs/ENTRADAS.md`.
+
+**D-041 · Lector de QR**: se usa el lector nativo del navegador (`BarcodeDetector`) cuando existe y, si no, la librería `jsQR`.

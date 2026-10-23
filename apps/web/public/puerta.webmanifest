@@ -1,0 +1,11 @@
+{
+  "name": "Taquilla · Puerta",
+  "short_name": "Puerta",
+  "start_url": "/puerta",
+  "scope": "/puerta",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e131d",
+  "theme_color": "#0b7a42",
+  "icons": [{ "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
