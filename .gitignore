@@ -1,0 +1,13 @@
+node_modules/
+.next/
+dist/
+coverage/
+.datos-locales/
+.env
+.env.*.local
+*.log
+.DS_Store
+tsconfig.tsbuildinfo
+next-env.d.ts
+copias/
+.claude/

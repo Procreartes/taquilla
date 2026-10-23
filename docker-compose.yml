@@ -1,0 +1,90 @@
+# Taquilla · entorno completo en local: docker compose up
+# Web: http://localhost:3000 · API: http://localhost:4000 · Correos capturados (Mailpit): http://localhost:8025
+name: taquilla
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taquilla
+      POSTGRES_PASSWORD: taquilla
+      POSTGRES_DB: taquilla
+    volumes:
+      - pgdatos:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taquilla"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdatos:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://taquilla:taquilla@postgres:5432/taquilla
+      REDIS_URL: redis://redis:6379
+      SMTP_URL: smtp://mailpit:1025
+      URL_PUBLICA: http://localhost:3000
+      SEMBRAR: "true"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:4000:4000"
+
+  trabajador:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["npm", "run", "trabajador", "-w", "@taquilla/api"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://taquilla:taquilla@postgres:5432/taquilla
+      REDIS_URL: redis://redis:6379
+      SMTP_URL: smtp://mailpit:1025
+      URL_PUBLICA: http://localhost:3000
+    depends_on:
+      api: { condition: service_started }
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_URL: http://api:4000
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  pgdatos:
+  redisdatos:
