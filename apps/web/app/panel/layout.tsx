@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 
 const ENLACES: { href: string; texto: string; permiso?: string }[] = [
   { href: '/panel', texto: 'Resumen' },
+  { href: '/panel/recintos', texto: 'Recintos y planos', permiso: 'recintos.ver' },
   { href: '/panel/organizador', texto: 'Organizador', permiso: 'organizador.editar' },
   { href: '/panel/equipo', texto: 'Equipo', permiso: 'equipo.gestionar' },
   { href: '/panel/auditoria', texto: 'Auditoría', permiso: 'auditoria.ver' },
@@ -28,7 +29,7 @@ function Barra() {
       <Link className="marca" href="/panel">Taquilla <span className="tag">Panel</span></Link>
       <nav aria-label="Panel">
         {ENLACES.filter((e) => !e.permiso || puede(e.permiso)).map((e) => (
-          <Link key={e.href} className="pill" href={e.href} aria-current={ruta === e.href ? 'page' : undefined}>{e.texto}</Link>
+          <Link key={e.href} className="pill" href={e.href} aria-current={ruta === e.href || (e.href !== '/panel' && ruta.startsWith(e.href)) ? 'page' : undefined}>{e.texto}</Link>
         ))}
       </nav>
       <div className="fila">

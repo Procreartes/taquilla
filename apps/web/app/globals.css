@@ -93,3 +93,28 @@ table.tabla{width:100%;border-collapse:collapse;font-size:14px}
 .kpi span{font-size:13px;color:var(--muted)}
 
 .pie{border-top:1px solid var(--line);padding:24px 16px;color:var(--muted);font-size:14px;text-align:center}
+
+/* Plano de butacas */
+.mapa{overflow-x:auto;border-radius:8px}
+.plano-svg{display:block;width:100%;min-width:560px;height:auto}
+.plano-svg [data-c]:focus{outline:none}
+.plano-svg [data-c]:focus-visible rect{stroke:var(--accent);stroke-width:7}
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--muted)}
+.leyenda span{display:inline-flex;align-items:center;gap:6px}
+.mu{width:14px;height:14px;border-radius:4px 4px 2px 2px;display:inline-block;flex:none}
+.informe div{padding:6px 0;font-size:14px}
+.informe .e{color:var(--bad)} .informe .a{color:var(--warn)} .informe .o{color:var(--ok);font-weight:700}
+.editor{display:grid;grid-template-columns:420px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:1060px){.editor{grid-template-columns:1fr}}
+details.bloque{border:1px solid var(--line);border-radius:8px;padding:0}
+details.bloque>summary{cursor:pointer;padding:10px 12px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:center}
+details.bloque>div{padding:0 12px 12px;display:grid;gap:10px}
+.mini{display:grid;gap:6px;border-top:1px dashed var(--line);padding-top:8px}
+.mini-fila{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:center}
+.mini-fila input,.mini-fila select{min-height:36px;padding:5px 8px}
+.icono{background:none;border:1px solid var(--line);border-radius:8px;width:36px;height:36px;cursor:pointer;color:var(--ink);font-size:18px;line-height:1}
+.segmentos{display:flex;flex-wrap:wrap;gap:4px}
+.segmentos button{font:600 14px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;border-radius:99px;cursor:pointer;min-height:38px}
+.segmentos button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cifras{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
+.cifras b{font-family:var(--f-display);font-size:18px}

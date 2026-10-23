@@ -10,7 +10,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "demo": "npm run semilla -w @taquilla/api && concurrently -k -n api,web -c blue,magenta \"npm run dev -w @taquilla/api\" \"npm run dev -w @taquilla/web\"",
+    "demo": "concurrently -k -n api,web -c blue,magenta \"npm run dev -w @taquilla/api\" \"npm run dev -w @taquilla/web\"",
     "dev": "concurrently -k -n api,web -c blue,magenta \"npm run dev -w @taquilla/api\" \"npm run dev -w @taquilla/web\"",
     "migrar": "npm run migrar -w @taquilla/api",
     "semilla": "npm run semilla -w @taquilla/api",
