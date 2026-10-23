@@ -1,5 +1,5 @@
 # Web de Taquilla (Next.js, salida standalone)
-FROM node:22-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 ARG API_URL=http://api:4000
 ENV API_URL=$API_URL NEXT_TELEMETRY_DISABLED=1
@@ -12,7 +12,7 @@ COPY packages/dominio packages/dominio
 COPY apps/web apps/web
 RUN npm run build -w @taquilla/web
 
-FROM node:22-alpine
+FROM node:25-alpine
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build /app/apps/web/.next/standalone ./
