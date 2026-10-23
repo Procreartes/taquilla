@@ -3,3 +3,4 @@ export * from './planos';
 export * from './mejor-sitio';
 export * from './dinero';
 export * from './qr';
+export * from './liquidacion';

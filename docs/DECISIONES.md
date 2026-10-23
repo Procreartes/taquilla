@@ -108,3 +108,21 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-040 · Cuenta de cliente sin contraseña** (enlace mágico por correo, cookie firmada de 30 días). Ver `docs/ENTRADAS.md`.
 
 **D-041 · Lector de QR**: se usa el lector nativo del navegador (`BarcodeDetector`) cuando existe y, si no, la librería `jsQR`.
+
+## Fase 6 · Panel y dinero
+
+**D-042 · Qué se reparte entre coproductores.** Neto a repartir = recaudación (con impuesto) − devoluciones − comisiones de Stripe − derechos de autor. El impuesto (IGIC/IVA) lo ingresa el organizador y se informa aparte; los **gastos de gestión son de la plataforma** y no entran en el reparto. *Pendiente de validar con la asesoría*, sobre todo si el impuesto debe descontarse antes del reparto.
+
+**D-043 · Comisión de Stripe.** Se toma la real del aviso de pago; si no llega, se estima (1,5 % + 0,25 €) y la liquidación lo indica como «estimada».
+
+**D-044 · Derechos de autor (SGAE) al 10 % de la base imponible**, configurable por organizador y marcado como pendiente hasta tener el contrato/tarifa real. El borderó sale en HTML imprimible y CSV.
+
+**D-045 · Devoluciones.** Individuales por entrada o del pedido completo, con o sin gastos de gestión (a elección de contabilidad). Liberan la butaca al momento y se ejecutan en la pasarela en segundo plano, con reintentos. Si una función se **cancela**, se devuelve todo **con** gastos (como exige la normativa de consumo) y se avisa a cada comprador.
+
+**D-046 · Cancelar exige escribir «CANCELAR».** Es irreversible y mueve dinero: doble confirmación en la pantalla y en la API.
+
+**D-047 · Invitaciones y acreditaciones como pedidos de 0 €** del canal «invitación», con entradas y QR normales (pasan por la misma puerta y no se pueden vender dos veces). El protocolo bloquea butacas a nombre de alguien sin emitir entrada; al emitir la invitación esa butaca se convierte en su entrada.
+
+**D-048 · Datos de público agregados con mínimo de 5 personas por grupo** (los grupos más pequeños se suman en «Otros»), para que nadie sea identificable en informes de subvenciones o de impacto.
+
+**D-049 · Exportaciones CSV (UTF-8, punto y coma, para Excel en español) y Excel (.xlsx).** Se neutralizan las celdas que empiezan por `=`, `+`, `-` o `@` (inyección de fórmulas) y cada exportación queda en la auditoría.

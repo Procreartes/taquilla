@@ -11,7 +11,7 @@
 | 3 · Eventos y funciones | ✅ Terminada |
 | 4 · Compra | ✅ Terminada |
 | 5 · Entradas y puerta | ✅ Terminada |
-| 6 · Panel y dinero | ⏳ Pendiente |
+| 6 · Panel y dinero | ✅ Terminada |
 | 7 · Seguridad y carga | ⏳ Pendiente |
 | 8 · Integraciones y acabado | ⏳ Pendiente |
 
@@ -128,6 +128,26 @@
 4. Escribe el código de una entrada (`TKT-…`, aparece debajo del QR) y pulsa **Validar**: «Adelante». Vuelve a validarla: «Ya utilizada» con la hora.
 5. Sin conexión: con la función elegida, desactiva la red del ordenador y valida otra entrada: dice «Validado sin conexión». Vuelve a activar la red: en unos segundos se sincroniza sola.
 6. **Mis entradas** (arriba a la derecha en la web): escribe el correo con el que compraste; el enlace llega a **Correos de prueba** del panel.
+
+## Fase 6 · Panel y dinero
+
+**Terminado**
+- Panel por función: vendidas, ocupación por zona, ingresos, gastos de gestión, pedidos con buscador, aforo dentro en tiempo real, exportación CSV y Excel.
+- Panel e informe por festival: totales, tabla por función, liquidación del festival con reparto y procedencia del público (isla, país, municipio) agregada.
+- Devoluciones individuales y de pedido (con o sin gastos) y cancelación de función con devolución masiva y aviso por correo.
+- Invitaciones, acreditaciones y protocolo (butacas bloqueadas con nombre).
+- Liquidación por función (bruto, impuesto, comisiones de Stripe, devoluciones, derechos de autor, neto y reparto entre coproductores) y borderó para la SGAE.
+
+**Pendiente de la asesoría / SGAE**
+- Si el reparto se hace antes o después de impuestos; tipo de derechos de autor (10 % provisional).
+
+**Cómo probarlo**
+1. Haz un par de compras de prueba (fase 4).
+2. Panel → **Eventos** → ASOMBRA 2026 → «Prueba técnica de venta · Antigua» → **Ventas y pedidos**: verás vendidas, ocupación por zona e ingresos. Pulsa **Pedidos Excel**.
+3. Pulsa el código de un pedido → **Devolver esta** (escribe un motivo). En unos segundos aparece «hecha» y la butaca vuelve a estar libre en la web.
+4. **Invitaciones y protocolo**: toca dos butacas en el plano, escribe un nombre y pulsa **Solo bloquear (protocolo)**: en la web pública aparecen como no disponibles. Selecciónalas otra vez y pulsa **Emitir invitación**.
+5. **Liquidación**: reparto entre Grupo Livon y Héctor Sansegundo, y el **Borderó SGAE** para imprimir.
+6. En la ficha del evento, **Informe del festival** muestra totales, liquidación y procedencia del público.
 
 ## Para Naroe
 
