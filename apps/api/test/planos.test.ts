@@ -25,7 +25,7 @@ describe('fase 2 · planos', () => {
 
   it('importa un plano plano-taquilla/1 y lo exporta igual', async () => {
     const c = await m.cliente().entrar('produccion@taquilla.test');
-    const r = (await c.post('/api/recintos', { codigo: 'sala-prueba', nombre: 'Sala de prueba' })).datos;
+    const r = (await c.post('/api/recintos', { codigo: 'sala-importada', nombre: 'Sala importada' })).datos;
     const imp = await c.post(`/api/recintos/${r.id}/importar`, { documento: doc('antigua.json') });
     expect(imp.statusCode).toBe(200);
     expect(imp.datos.diferencias).toEqual([]);

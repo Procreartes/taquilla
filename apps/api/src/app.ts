@@ -10,9 +10,10 @@ import { rutasAuth } from './modulos/auth';
 import { rutasOrganizadores } from './modulos/organizadores';
 import { rutasEntra } from './modulos/entra';
 import { rutasPlanos } from './modulos/planos';
+import { rutasEventos } from './modulos/eventos';
 
 export type Modulo = (app: FastifyInstance, ctx: Contexto) => Promise<void>;
-const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos];
+const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos];
 
 export async function construirApp(ctx: Contexto, opciones: { registro?: boolean } = {}) {
   const app = Fastify({

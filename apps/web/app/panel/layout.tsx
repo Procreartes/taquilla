@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 
 const ENLACES: { href: string; texto: string; permiso?: string }[] = [
   { href: '/panel', texto: 'Resumen' },
+  { href: '/panel/eventos', texto: 'Eventos', permiso: 'eventos.ver' },
   { href: '/panel/recintos', texto: 'Recintos y planos', permiso: 'recintos.ver' },
   { href: '/panel/organizador', texto: 'Organizador', permiso: 'organizador.editar' },
   { href: '/panel/equipo', texto: 'Equipo', permiso: 'equipo.gestionar' },
