@@ -82,11 +82,17 @@ export async function conectarPglite(dir?: string): Promise<Db> {
     },
   });
   await db.waitReady;
-  const base = consultor((s, p) => db.query(s, p as any[]), (s) => db.exec(s));
+  // PGlite ignora el parser de numeric: se convierte aquí para que se comporte igual que pg
+  const numerico = (r: { rows: any[]; fields: { name: string; dataTypeID: number }[] }) => {
+    const campos = r.fields.filter((f) => f.dataTypeID === OID_NUMERIC).map((f) => f.name);
+    if (campos.length) for (const fila of r.rows) for (const k of campos) if (fila[k] !== null) fila[k] = Number(fila[k]);
+    return r;
+  };
+  const base = consultor(async (s, p) => numerico(await db.query(s, p as any[])), (s) => db.exec(s));
   return {
     ...base,
     tipo: 'pglite',
-    tx: (fn) => db.transaction((t) => fn(consultor((s, p) => t.query(s, p as any[]), (s) => t.exec(s)))),
+    tx: (fn) => db.transaction((t) => fn(consultor(async (s, p) => numerico(await t.query(s, p as any[])), (s) => t.exec(s)))),
     async close() {
       await db.close();
     },

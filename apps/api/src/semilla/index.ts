@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import type { DocumentoPlano } from '@taquilla/dominio';
 import { hashClave, tokenAleatorio } from '../infra/cripto';
 import { crearVersion } from '../modulos/planos';
+import { importarProgramacion, ponerALaVenta } from '../modulos/eventos';
 
 export const CARPETA_DATOS = join(import.meta.dirname, '..', '..', '..', '..', 'datos');
 export const leerDatos = <T = any>(ruta: string): T => JSON.parse(readFileSync(join(CARPETA_DATOS, ruta), 'utf8'));
@@ -107,8 +108,49 @@ export async function sembrarPlanos(db: Db, organizadorId: string) {
   return ids;
 }
 
+export const EVENTO_ASOMBRA = 'asombra-2026';
+
+/**
+ * Festival ASOMBRA 2026 con su programación real (la venta oficial sigue en Entradas Canarias)
+ * y tres funciones de PRUEBA, claramente marcadas, para poder probar la compra.
+ */
+export async function sembrarFestival(db: Db, organizadorId: string, planos: Awaited<ReturnType<typeof sembrarPlanos>>) {
+  const r = await db.tx((t) =>
+    importarProgramacion(t, organizadorId, leerDatos('programacion-asombra-2026.json'), {
+      slug: EVENTO_ASOMBRA,
+      nombre: 'ASOMBRA 2026 · Festival Internacional de Magia de Canarias',
+      socios: [{ nombre: 'Grupo Livon', porcentaje: 50 }, { nombre: 'Héctor Sansegundo', porcentaje: 50 }],
+    }),
+  );
+  const sala = await db.one<{ id: string }>(
+    `insert into recintos (organizador_id, codigo, nombre, municipio, isla) values ($1, 'sala-prueba', 'Sala de prueba (aforo general)', 'Puerto del Rosario', 'fuerteventura')
+     on conflict (organizador_id, codigo) do update set nombre = excluded.nombre returning id`,
+    [organizadorId],
+  );
+  const pruebas = [
+    { codigo: 't01', titulo: 'Prueba técnica de venta · Antigua', fecha: '2026-11-27', hora: '20:30', recinto: planos.antigua.recinto, modo: 'numerada', version: planos.antigua.version, aforo: null, precios: { preferente: 2200, central: 1800, fondo: 1400 } },
+    { codigo: 't02', titulo: 'Prueba técnica de venta · Puerto del Rosario', fecha: '2026-11-20', hora: '20:00', recinto: planos['auditorio-pdr'].recinto, modo: 'numerada', version: planos['auditorio-pdr'].version, aforo: null, precios: { platea: 1500, anfiteatro: 1200 } },
+    { codigo: 't03', titulo: 'Prueba técnica de venta · aforo general', fecha: '2026-11-29', hora: '19:00', recinto: sala!.id, modo: 'general', version: null, aforo: 200, precios: { general: 1500 } },
+  ];
+  for (const p of pruebas) {
+    const f = await db.one<{ id: string; estado: string }>(
+      `insert into funciones (organizador_id, evento_id, recinto_id, codigo, titulo, artistas, nota, fecha, hora, modo_venta, version_plano_id, aforo, es_prueba)
+       values ($1, $2, $3, $4, $5, '["Función ficticia para probar la plataforma"]', 'Función de PRUEBA: no es real y sus entradas no valen para nada.', $6, $7, $8, $9, $10, true)
+       on conflict (evento_id, codigo) do update set titulo = excluded.titulo returning id, estado`,
+      [organizadorId, r.eventoId, p.recinto, p.codigo, p.titulo, p.fecha, p.hora, p.modo, p.version, p.aforo],
+    );
+    if (f!.estado !== 'borrador') continue;
+    for (const [zona, cent] of Object.entries(p.precios)) {
+      await db.query('insert into precios_funcion (funcion_id, zona_codigo, precio_cent) values ($1, $2, $3) on conflict do nothing', [f!.id, zona, cent]);
+    }
+    await db.tx((t) => ponerALaVenta(t, organizadorId, f!.id));
+  }
+  return r;
+}
+
 export async function sembrar(db: Db, config: Config) {
   const base = await sembrarBase(db, config);
   const planos = await sembrarPlanos(db, base.asombra);
-  return { ...base, planos };
+  const festival = await sembrarFestival(db, base.asombra, planos);
+  return { ...base, planos, festival };
 }

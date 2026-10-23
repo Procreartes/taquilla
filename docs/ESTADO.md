@@ -8,7 +8,7 @@
 |---|---|
 | 1 · Base | ✅ Terminada |
 | 2 · Planos | ✅ Terminada |
-| 3 · Eventos y funciones | ⏳ Pendiente |
+| 3 · Eventos y funciones | ✅ Terminada |
 | 4 · Compra | ⏳ Pendiente |
 | 5 · Entradas y puerta | ⏳ Pendiente |
 | 6 · Panel y dinero | ⏳ Pendiente |
@@ -61,6 +61,29 @@
 3. Cambia «Butacas por fila» del patio a 20: la comprobación se pone en rojo y «Poner a la venta» se desactiva. Vuelve a 22.
 4. Elige la herramienta «Acompañante PMR» y pulsa una butaca de la fila F-1: el aviso de PMR desaparece. Púlsala otra vez para deshacerlo.
 5. Pulsa **Exportar**: se descarga el plano en formato `plano-taquilla/1`. En la ficha del recinto, **Importar plano** lo vuelve a cargar.
+
+## Fase 3 · Eventos y funciones
+
+**Terminado**
+- Eventos (festival, gira o evento suelto) con sus funciones: recinto, fecha, hora y modo de venta (numerada, aforo general o acceso libre).
+- Importador de la programación: carga ASOMBRA 2026 completo (16 funciones en 6 islas, con colores de isla) y asigna los planos de Puerto del Rosario.
+- Precios por función y zona. Sin precio en todas las zonas, la función no se puede poner a la venta (aparece «Precio por confirmar»).
+- Coproducción: reparto por porcentajes (ASOMBRA: Grupo Livon 50 % · Héctor Sansegundo 50 %), que debe sumar 100 %.
+- Poner a la venta congela el plano. Pausar la venta. Cambios de precio en la auditoría.
+
+**Es demostración**
+- Las funciones «Prueba técnica de venta» (Antigua, Puerto del Rosario y aforo general) son ficticias y son las únicas que se pueden comprar.
+- Los precios de esas funciones de prueba son inventados (22/18/14 € en Antigua, 15/12 € en Puerto del Rosario, 15 € general).
+
+**Espera datos reales**
+- Precios oficiales de Fuerteventura, Holidayworld y El Hierro; aforos de los recintos sin plano; CIF de los socios.
+
+**Cómo probarlo**
+1. Entra como «Producción ASOMBRA (prueba)» → **Eventos** → **ASOMBRA 2026**: verás las 19 funciones con su isla, modo de venta, precio y estado.
+2. Abre «Más allá de la imaginación» (Puerto del Rosario): dice «Aún no se puede poner a la venta: Precio por confirmar en todas las zonas».
+3. Escribe un precio en «Patio de butacas», guarda: ahora dice «1 zona». Pon también «Anfiteatro» y guarda: el botón «Poner a la venta» se activa. (No lo pulses si no quieres; es un dato de prueba.)
+4. Abre «La Maga»: indica que su venta oficial está en Entradas Canarias y no deja venderla aquí.
+5. Abajo del evento, el reparto de coproducción: si pones 60 % y 30 % y guardas, avisa de que debe sumar 100 %.
 
 ## Para Naroe
 

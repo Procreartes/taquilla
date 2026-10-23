@@ -58,3 +58,19 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-018 · Guardado automático del borrador.** El editor guarda solo cada cambio a los 0,7 s; el servidor vuelve a calcular las butacas y la comprobación, así que lo que se guarda nunca depende del navegador.
 
 **D-019 · Importar no se fía de la lista de butacas del fichero.** Al importar un `plano-taquilla/1` se recalculan las butacas desde la receta y, si no coinciden con las que trae el fichero, se avisa (se usa siempre la receta).
+
+## Fase 3 · Eventos y funciones
+
+**D-020 · ASOMBRA 2026 se carga con sus datos reales pero no se vende aquí.** Las 16 funciones reales aparecen en la plataforma (para que la cartelera y los informes se vean con datos de verdad), pero ninguna se puede poner a la venta: las que tienen venta oficial enlazan a Entradas Canarias y el sistema lo impide expresamente («La venta oficial está en otra plataforma»); las demás no tienen precio oficial. Para probar la compra hay **tres funciones de PRUEBA** marcadas como tales (Antigua y Puerto del Rosario numeradas, y una de aforo general en una «Sala de prueba»).
+
+**D-021 · Modo de venta al importar.** Precio 0 → acceso libre; recinto con plano que cuadra → numerada; si no → aforo general (con el aforo «por confirmar» hasta que alguien lo ponga).
+
+**D-022 · «Precio desde» de la programación.** Cuando la programación dice «desde 11 €» (f01, f02) se pone ese precio a la zona general y se deja una nota «Precio desde 11 €». Como esas funciones se venden en Entradas Canarias, no afecta a la venta.
+
+**D-023 · Precios en céntimos y con impuesto incluido** (como se anuncian al público en España). La base y la cuota se calculan al facturar. Los gastos de gestión también llevan impuesto incluido al tipo del organizador — **pendiente de confirmar con la asesoría**, porque los gastos los factura la plataforma y no el organizador.
+
+**D-024 · Reparto de coproducción sin perder céntimos.** Se usa el método del resto mayor: la suma de lo que recibe cada socio siempre es exactamente el total. Para ASOMBRA: Grupo Livon 50 % y Héctor Sansegundo 50 % (CIF pendientes).
+
+**D-025 · Las direcciones de los eventos (slug) son únicas en toda la plataforma**, porque forman parte de la dirección pública de la cartelera (`/e/asombra-2026`).
+
+**D-026 · Cambiar el plano de una función con ventas.** Se impide desde la ficha normal; se hace con «Cambiar plano», que traslada las entradas a la nueva versión si sus butacas existen y, si no, pide reasignarlas. Se completa en la fase 4, cuando existen las entradas.
