@@ -13,7 +13,7 @@
 | 5 · Entradas y puerta | ✅ Terminada |
 | 6 · Panel y dinero | ✅ Terminada |
 | 7 · Seguridad y carga | ✅ Terminada |
-| 8 · Integraciones y acabado | ⏳ Pendiente |
+| 8 · Integraciones y acabado | ✅ Terminada |
 
 ## Fase 1 · Base
 
@@ -167,6 +167,94 @@
 2. Abre la función en la web pública: aparece la **Sala de espera**. Pulsa «Entrar en la cola»: verás la hora de apertura y, al llegar, tu turno.
 3. Vuelve al panel y desactiva la cola al terminar.
 
+## Fase 8 · Integraciones y acabado
+
+**Terminado**
+- Webhooks para n8n (venta, agotado, devolución, 90 % de aforo), firmados, con reintentos y registro.
+- Botón / widget «Comprar» para insertar en otras webs (botón o cartelera completa), con generador de código en el panel.
+- Web pública, compra, cuenta, widget y correo de confirmación en español, inglés y alemán (traducciones pendientes de revisión nativa).
+- Accesibilidad revisada con axe-core (WCAG 2.2 AA) en las pantallas principales y en móvil.
+- Prueba de humo en CI del entorno completo con Docker (PostgreSQL, Redis, Mailpit, API, trabajador y web).
+- Documentación final (`README.md` y `docs/`).
+
+**Cómo probarlo**
+1. Panel (como «Gerencia ASOMBRA») → **Integraciones**. Si tienes n8n, crea un *Webhook* y pega su URL; pulsa **Enviar prueba**. Debajo verás si se entregó.
+2. En la misma pantalla, «Botón Comprar para otras webs»: elige el evento y «Cartelera completa» y pulsa **abrir** en la vista previa.
+3. Cambia el idioma de la web pública arriba a la derecha (English / Deutsch).
+
+---
+
 ## Para Naroe
 
-*(Se completa al final de todas las fases.)*
+### 1. Arrancarlo en tu ordenador (un solo comando)
+
+Necesitas tener instalado **Node.js 22 o superior** (https://nodejs.org, botón «LTS»). Luego, en una terminal dentro de la carpeta `taquilla`:
+
+```bash
+npm install
+npm run demo
+```
+
+La primera vez tarda un par de minutos. Cuando ponga `Ready`, abre **http://localhost:3000**. Para pararlo, pulsa `Ctrl + C` en la terminal.
+
+- No hace falta Docker ni ninguna clave: usa una base de datos local (carpeta `.datos-locales`, que puedes borrar para empezar de cero) y una pasarela de pago simulada.
+- El panel está en **http://localhost:3000/entrar**: abajo aparecen los **usuarios de prueba** con el botón **Entrar como…** (sin contraseña). Cada uno tiene un rol distinto. Si prefieres entrar con contraseña, copia `.env.example` como `.env`: la contraseña de todos los usuarios de prueba es el valor de `CLAVE_USUARIOS_PRUEBA`.
+- La app de puerta está en **http://localhost:3000/puerta**.
+- Si tienes Docker y quieres el entorno completo (PostgreSQL, Redis y Mailpit): `docker compose up --build`. Los correos se ven en http://localhost:8025.
+
+### 2. Hacer una compra de prueba
+
+1. Abre http://localhost:3000 → **ASOMBRA 2026**.
+2. Filtra por **Fuerteventura** y, en **«Prueba técnica de venta · Antigua»** (marcada como PRUEBA), pulsa **Comprar**.
+3. Pulsa **Buscar** en «Mejor sitio disponible» (o toca butacas en el plano y **Continuar**).
+4. Escribe un nombre y un correo inventados, marca las dos casillas obligatorias y pulsa **Pagar**.
+5. En la pasarela simulada deja la tarjeta **4242 4242 4242 4242** y pulsa **Pagar**. (La 4000 0000 0000 0002 simula una tarjeta rechazada.)
+6. Verás tus entradas con el QR que cambia cada 15 segundos, el PDF y la factura simplificada.
+7. El correo que habría recibido la persona está en el panel → **Correos de prueba**.
+8. Para validarla: http://localhost:3000/puerta → entra como «Puerta ASOMBRA (prueba)» → elige la función → escribe el código `TKT-…` de la entrada → **Validar**. La segunda vez dirá «Ya utilizada».
+
+Las funciones reales de ASOMBRA aparecen en la cartelera pero **no se pueden comprar aquí** (enlazan a Entradas Canarias o tienen el precio por confirmar).
+
+### 3. Qué hace falta para ponerlo en producción
+
+Nada de esto se ha hecho (por las reglas del encargo). Por orden:
+
+1. **Decisiones** de la lista de preguntas de abajo (sobre todo entidad vendedora, IGIC y gastos de gestión).
+2. **Dominio** y **Cloudflare** delante (DNS, CDN, Turnstile: crear un *widget* y poner `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET`).
+3. **Despliegue en Coolify** (VPS de OVHcloud) con el `docker-compose.yml`: PostgreSQL 16, Redis 7, API, trabajador y web. Variables: ver `.env.example` y `docs/SEGURIDAD.md` («Antes de producción»): secretos propios, `NODE_ENV=production`, `EXIGIR_2FA=true`, `TRUST_PROXY=true`, `URL_PUBLICA`.
+4. **Correo real**: un servicio SMTP (Microsoft 365, Brevo, Amazon SES…) con SPF, DKIM y DMARC del dominio → `SMTP_URL`.
+5. **Stripe**: cuenta de la plataforma con **Connect**; primero en modo prueba (`docs/PAGOS.md`), y cuando todo esté validado, las claves reales. ⚠️ El código hoy **rechaza a propósito las claves reales** (`sk_live_`): habrá que quitar ese bloqueo en `apps/api/src/config.ts` e `infra/pagos.ts` conscientemente el día que se vaya a vender de verdad.
+6. **Cada organizador**: datos fiscales completos en el panel y alta en Stripe con **Conectar con Stripe**.
+7. **Microsoft 365** para el equipo: registrar una aplicación en Entra ID (redirección `https://DOMINIO/api/auth/entra/vuelta`) → `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`.
+8. **Copias**: Backblaze B2 + NAS Synology (`docs/COPIAS.md`).
+9. **Revisión legal** de los textos (privacidad, condiciones, aviso legal, cookies) y contrato de encargado de tratamiento con cada organizador.
+10. **Repetir la prueba de carga** en el servidor real (`docs/CARGA.md`) y una **auditoría de seguridad externa** antes de la primera venta real.
+11. Opcional: Apple/Google Wallet (certificados), Redsys + Bizum (TPV del banco).
+
+### 4. Preguntas pendientes (con lo que se ha supuesto mientras tanto)
+
+| # | Pregunta | Supuesto actual |
+|---|---|---|
+| 1 | ¿Nombre comercial de la plataforma? | «Taquilla» |
+| 2 | ¿Qué entidad vende ASOMBRA (razón social, CIF, cuenta de Stripe)? | Organizador de prueba «ASOMBRA (coproducción…)» sin datos fiscales |
+| 3 | ¿Tipo de IGIC de las entradas? | 7 %, pendiente de la asesoría |
+| 4 | ¿Los gastos de gestión llevan IGIC/IVA y quién los factura (plataforma u organizador)? | Llevan el impuesto del organizador; los cobra la plataforma |
+| 5 | ¿Gastos de gestión de 1 € por entrada? ¿Se devuelven en las devoluciones individuales? | 1 €; en individuales lo decide contabilidad en cada caso; en cancelaciones, siempre |
+| 6 | Precios oficiales de Fuerteventura, Holidayworld y El Hierro, y aforos de los recintos sin plano | «Precio por confirmar»: no se pueden vender |
+| 7 | Numeración del anfiteatro de Puerto del Rosario | A-1 a A-5, impares a la izquierda |
+| 8 | ¿Qué butacas son de acompañante PMR en Puerto del Rosario? | Ninguna marcada (aviso en la comprobación) |
+| 9 | ¿La F-17-4 de Antigua es de acompañante? | Sí |
+| 10 | Reparto de la coproducción ASOMBRA: ¿sobre el neto después de comisiones y derechos de autor? ¿CIF de los socios? | 50 % / 50 % del neto tras comisiones de Stripe y derechos de autor |
+| 11 | ¿Porcentaje y forma de cálculo de la SGAE? | 10 % de la base imponible, pendiente |
+| 12 | ¿Dominio? | Ninguno |
+| 13 | ¿ASOMBRA 2026 se venderá aquí o sigue en Entradas Canarias? | Sigue en Entradas Canarias |
+| 14 | ¿Hace falta controlar salidas y reentradas en puerta? | No: «dentro» = entradas usadas |
+| 15 | ¿El panel tiene que estar también en inglés/alemán para clientes externos? | Solo español |
+| 16 | ¿Revisión nativa de las traducciones al inglés y al alemán? ¿Quién? | Pendiente |
+| 17 | ¿Banco para Redsys + Bizum? | Sin activar |
+
+### 5. Sobre las PRs automáticas de Dependabot
+
+Al activar las actualizaciones automáticas, GitHub abrió varias PRs de **versiones mayores** (Node 25, BullMQ 6, Fastify rate-limit 11…). No se han fusionado: las versiones mayores pueden romper cosas y Node 25 no es una versión de soporte largo. La configuración ya está ajustada para que en adelante solo proponga actualizaciones menores y de seguridad; esas PRs se pueden cerrar sin miedo (o revisarlas una a una con calma).
+
+Las decisiones técnicas tomadas sin poder consultarte están explicadas, con cómo cambiarlas, en [DECISIONES.md](DECISIONES.md).
