@@ -253,4 +253,8 @@ Nada de esto se ha hecho (por las reglas del encargo). Por orden:
 | 16 | ¿Revisión nativa de las traducciones al inglés y al alemán? ¿Quién? | Pendiente |
 | 17 | ¿Banco para Redsys + Bizum? | Sin activar |
 
+### 5. Sobre las PRs automáticas de Dependabot
+
+Al activar las actualizaciones automáticas, GitHub abrió varias PRs de **versiones mayores** (Node 25, BullMQ 6, Fastify rate-limit 11…). No se han fusionado: las versiones mayores pueden romper cosas y Node 25 no es una versión de soporte largo. La configuración ya está ajustada para que en adelante solo proponga actualizaciones menores y de seguridad; esas PRs se pueden cerrar sin miedo (o revisarlas una a una con calma).
+
 Las decisiones técnicas tomadas sin poder consultarte están explicadas, con cómo cambiarlas, en [DECISIONES.md](DECISIONES.md).
