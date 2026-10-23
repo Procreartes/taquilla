@@ -31,7 +31,7 @@ export function correoConfirmacion(p: any, urlPedido: string) {
 <tr><td style="padding:2px 0;color:#4f596c;font-size:12px">${esc(p.impuesto_nombre)} incluido (${Number(p.impuesto_tipo)} %)</td><td></td><td style="text-align:right;color:#4f596c;font-size:12px">${eur(cuota)}</td></tr></table>
 <p style="margin:20px 0"><a href="${esc(urlPedido)}" style="background:#131a28;color:#fff;padding:12px 20px;border-radius:99px;text-decoration:none;font-weight:700;display:inline-block">Ver mis entradas</a></p>
 <p style="font-size:14px">En la puerta enseña el código QR desde el móvil (cambia cada pocos segundos) o el PDF adjunto impreso.</p>
-<p style="font-size:12px;color:#4f596c">Factura simplificada nº ${esc(p.numero_factura)} · ${esc(p.organizador_razon_social || p.organizador_nombre)}${p.organizador_cif ? ' · CIF ' + esc(p.organizador_cif) : ''}</p>`;
+<p style="font-size:12px;color:#4f596c">${p.numero_factura ? `Factura simplificada nº ${esc(p.numero_factura)} · ` : 'Invitación · '}${esc(p.organizador_razon_social || p.organizador_nombre)}${p.organizador_cif ? ' · CIF ' + esc(p.organizador_cif) : ''}</p>`;
   const texto = `${p.es_prueba ? 'FUNCIÓN DE PRUEBA: estas entradas no son reales.\n\n' : ''}Tus entradas para ${p.titulo}
 ${fechaTexto(p.fecha)}${p.hora ? ' · ' + p.hora : ''} · ${p.recinto_nombre}
 Pedido ${p.codigo}
@@ -58,5 +58,18 @@ export function correoConflicto(p: any) {
     asunto: `Devolución de tu pedido ${p.codigo}`,
     html: marco('Devolución', cuerpo, 'Si tienes cualquier duda, responde a este correo.'),
     texto: `No hemos podido emitir tus entradas para ${p.titulo}: las plazas dejaron de estar disponibles mientras pagabas.\nTe devolvemos ${eur(p.total_cent)} a la misma tarjeta.\nPedido ${p.codigo}`,
+  };
+}
+
+export function correoCancelacion(p: any, motivo: string) {
+  const cuerpo = `<h1 style="font-size:20px;margin:0 0 10px">Función cancelada</h1>
+<p>Sentimos comunicarte que <b>${esc(p.titulo)}</b> del ${esc(fechaTexto(p.fecha))} se ha cancelado.</p>
+<p>Motivo: ${esc(motivo)}</p>
+<p>Te devolvemos el importe completo de tu compra, gastos de gestión incluidos (<b>${eur(p.total_cent)}</b>), a la misma tarjeta. Según tu banco puede tardar de 5 a 10 días.</p>
+<p>Pedido <b>${esc(p.codigo)}</b>. Tus entradas ya no son válidas.</p>`;
+  return {
+    asunto: `${p.es_prueba ? '[PRUEBA] ' : ''}Función cancelada · ${p.titulo}`,
+    html: marco('Función cancelada', cuerpo, `Organiza ${esc(p.organizador_nombre)}.`),
+    texto: `${p.titulo} (${fechaTexto(p.fecha)}) se ha cancelado. Motivo: ${motivo}\nTe devolvemos ${eur(p.total_cent)} a la misma tarjeta.\nPedido ${p.codigo}`,
   };
 }

@@ -47,6 +47,7 @@ export default function Evento({ params }: { params: Promise<{ id: string }> }) 
       <p><Link href="/panel/eventos">← Eventos</Link></p>
       <h1>{e.nombre}</h1>
       {e.datos?.fuente && <p className="small muted">Fuente de la programación: {e.datos.fuente}</p>}
+      {puede('informes.ver') && <div><Link className="btn sec sm" href={`/panel/eventos/${id}/informe`}>Informe del festival · liquidación · público</Link></div>}
       <div className="panel desliza">
         <table className="tabla">
           <caption className="sr-only">Funciones del evento</caption>

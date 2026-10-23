@@ -1,6 +1,7 @@
 /** Registro de los trabajos en segundo plano. */
 import type { Contexto } from '../contexto';
-import { correoConfirmacion, correoConflicto } from './plantillas';
+import { correoCancelacion, correoConfirmacion, correoConflicto } from './plantillas';
+import { devolverEntradas } from './dinero';
 import { ejecutarDevolucionesPendientes, enlacePedido, resumenPedido } from './venta';
 
 export type Adjuntador = (ctx: Contexto, pedido: any) => Promise<{ nombre: string; tipo: string; contenido: Buffer }[]>;
@@ -36,6 +37,19 @@ export function registrarTrabajos(ctx: Contexto) {
       html: c.html.replace('¡Tus entradas están listas!', 'Hemos cambiado tu butaca'),
       texto: 'Hemos tenido que cambiar tu butaca por un cambio en el plano de la sala. Estas son tus entradas actualizadas.\n\n' + c.texto,
     });
+  });
+  // Cancelación de una función: devolución completa (con gastos de gestión) de cada pedido
+  ctx.colas.registrar('funcion.devolver_pedido', async ({ organizadorId, usuarioId, pedidoId, motivo }) => {
+    const p = await ctx.db.one<{ estado: string; canal: string }>('select estado, canal from pedidos where id = $1', [pedidoId]);
+    if (p && ['pagado', 'devuelto_parcial'].includes(p.estado)) {
+      const vivas = await ctx.db.one<{ n: number }>(`select count(*)::int as n from entradas where pedido_id = $1 and estado = 'valida'`, [pedidoId]);
+      if (vivas!.n) await ctx.db.tx((t) => devolverEntradas(t, { organizadorId, usuarioId, pedidoId, incluirGastos: true, motivo }));
+      if (p.canal !== 'invitacion') {
+        const r = await resumenPedido(ctx.db, pedidoId);
+        if (r.comprador_email) await ctx.correos.enviar({ organizadorId, para: r.comprador_email, ...correoCancelacion(r, motivo) });
+      }
+    }
+    await ejecutarDevolucionesPendientes(ctx, pedidoId);
   });
   ctx.colas.registrar('pago.devolver_pendientes', ({ pedidoId }) => ejecutarDevolucionesPendientes(ctx, pedidoId));
   ctx.colas.registrar('webhook.saliente', async () => {

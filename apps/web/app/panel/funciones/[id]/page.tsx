@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react';
 import { api, eur, fechaLarga } from '@/lib/api';
 import { useSesion } from '@/lib/sesion';
 import { ESTADO_FUNCION, MODO_VENTA } from '@/lib/textos';
+import NavFuncion from '@/componentes/NavFuncion';
 
 export default function Funcion({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -50,6 +51,7 @@ export default function Funcion({ params }: { params: Promise<{ id: string }> })
         </div>
         <span className={`tag ${estado.clase}`}>{estado.texto}</span>
       </div>
+      <NavFuncion id={id} />
       {f.es_prueba && <p className="aviso warn">Función de PRUEBA: no es real y sus entradas no valen para nada.</p>}
       {f.verificar && <p className="aviso warn">Hay datos de esta función pendientes de verificar.</p>}
       {f.venta_externa_url && <p className="aviso">La venta oficial de esta función está en Entradas Canarias: <a href={f.venta_externa_url} target="_blank" rel="noopener noreferrer">ver venta oficial</a>. Aquí no se vende.</p>}
