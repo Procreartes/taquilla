@@ -16,7 +16,7 @@ import { DOCUMENTOS_LEGALES, plantillaLegal } from '../servicios/legal';
 const uuid = z.string().uuid();
 
 const CAMPOS_FUNCION_PUBLICA = `f.id, f.codigo, f.titulo, f.artistas, f.programa, f.es_gala, f.edad_minima, f.nota, f.fecha, to_char(f.hora, 'HH24:MI') as hora,
-  f.modo_venta, f.estado, f.venta_externa_url, f.verificar, f.es_prueba, f.aforo,
+  f.modo_venta, f.estado, f.venta_externa_url, f.verificar, f.es_prueba, f.aforo, f.cola_virtual,
   r.nombre as recinto_nombre, r.zona as recinto_zona, r.municipio, r.isla`;
 
 export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
@@ -81,6 +81,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
       quedan: f.modo_venta === 'general' && f.aforo ? Math.max(0, f.aforo - vendidas_general - (await ctx.almacen.cantidadReservada(id))) : null,
       zonas: zonas.map((z) => ({ ...z, precio_cent: precios[z.codigo] ?? null })),
       turnstile: ctx.config.TURNSTILE_SITE_KEY ?? null,
+      cola: !!f.cola_virtual,
       reservaMinutos: ctx.config.RESERVA_MINUTOS,
     };
   });
@@ -110,6 +111,21 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     if (!(await verificarTurnstile(ctx.config.TURNSTILE_SECRET, d.turnstile, req.ip))) throw new ErrorHttp(403, 'No hemos podido comprobar que no eres un robot. Vuelve a intentarlo.', 'turnstile');
     await comprobarPaseCola(ctx, d.funcionId, d.pase);
     return crearReserva(ctx, d);
+  });
+
+  // ---- Cola virtual ----
+  app.post('/api/publico/cola/:funcionId/entrar', limiteCompra, async (req) => {
+    const { funcionId } = z.object({ funcionId: uuid }).parse(req.params);
+    const { turnstile } = z.object({ turnstile: z.string().max(4096).optional() }).parse(req.body ?? {});
+    if (!(await verificarTurnstile(ctx.config.TURNSTILE_SECRET, turnstile, req.ip))) throw new ErrorHttp(403, 'No hemos podido comprobar que no eres un robot. Vuelve a intentarlo.', 'turnstile');
+    return ctx.colaVirtual!.entrar(funcionId);
+  });
+
+  app.get('/api/publico/cola/:funcionId/estado', { config: { rateLimit: { max: Math.max(600, ctx.config.LIMITE_COMPRA_POR_MINUTO), timeWindow: '1 minute' } } }, async (req, reply) => {
+    const { funcionId } = z.object({ funcionId: uuid }).parse(req.params);
+    const { turno } = z.object({ turno: z.string().max(100) }).parse(req.query);
+    reply.header('cache-control', 'no-store');
+    return ctx.colaVirtual!.estado(funcionId, turno);
   });
 
   app.delete('/api/publico/reservas/:token', async (req) => {
@@ -170,9 +186,9 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
   });
 }
 
-/** Cola virtual: si está activa para la función, hace falta un pase válido (se completa en la fase 7). */
+/** Cola virtual: si está activa para la función, hace falta un pase válido. */
 async function comprobarPaseCola(ctx: Contexto, funcionId: string, pase: string | undefined) {
-  const cola = (ctx as any).colaVirtual as { exigePase(f: string): Promise<boolean>; validarPase(f: string, p?: string): boolean } | undefined;
+  const cola = ctx.colaVirtual;
   if (!cola || !(await cola.exigePase(funcionId))) return;
   if (!cola.validarPase(funcionId, pase)) throw new ErrorHttp(403, 'Tu turno en la cola ha caducado. Vuelve a entrar en la cola.', 'sin_pase');
 }

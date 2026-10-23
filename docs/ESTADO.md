@@ -12,7 +12,7 @@
 | 4 · Compra | ✅ Terminada |
 | 5 · Entradas y puerta | ✅ Terminada |
 | 6 · Panel y dinero | ✅ Terminada |
-| 7 · Seguridad y carga | ⏳ Pendiente |
+| 7 · Seguridad y carga | ✅ Terminada |
 | 8 · Integraciones y acabado | ⏳ Pendiente |
 
 ## Fase 1 · Base
@@ -148,6 +148,24 @@
 4. **Invitaciones y protocolo**: toca dos butacas en el plano, escribe un nombre y pulsa **Solo bloquear (protocolo)**: en la web pública aparecen como no disponibles. Selecciónalas otra vez y pulsa **Emitir invitación**.
 5. **Liquidación**: reparto entre Grupo Livon y Héctor Sansegundo, y el **Borderó SGAE** para imprimir.
 6. En la ficha del evento, **Informe del festival** muestra totales, liquidación y procedencia del público.
+
+## Fase 7 · Seguridad y carga
+
+**Terminado**
+- Revisión OWASP Top 10 punto por punto (`docs/SEGURIDAD.md`), auditoría completa de acciones sensibles.
+- Cola virtual (sala de espera) por función, con pase firmado y hora de apertura.
+- Turnstile de Cloudflare en la reserva y en la cola (se activa con las claves).
+- Invitación del equipo con enlace para definir contraseña fuerte; política de contenidos (CSP) y HSTS en producción; Dependabot.
+- Prueba de carga superada en local: 5.000 personas en cola y 200 compras/minuto sin errores ni sobreventa (`docs/CARGA.md`).
+- Copias de seguridad: scripts de copia cifrada a Backblaze B2 y NAS Synology y de restauración (`docs/COPIAS.md`).
+
+**Espera claves o servidor**
+- Claves de Turnstile, cuentas de B2 y del NAS, y repetir la prueba de carga en el VPS real.
+
+**Cómo probarlo**
+1. Panel → función «Prueba técnica de venta · Antigua» → **Cola virtual**: marca «Activar la sala de espera», pon la apertura dentro de 2 minutos y guarda.
+2. Abre la función en la web pública: aparece la **Sala de espera**. Pulsa «Entrar en la cola»: verás la hora de apertura y, al llegar, tu turno.
+3. Vuelve al panel y desactiva la cola al terminar.
 
 ## Para Naroe
 

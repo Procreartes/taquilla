@@ -5,6 +5,7 @@ import type { AlmacenReservas } from './infra/almacen';
 import type { Colas } from './infra/colas';
 import type { Correos } from './infra/correo';
 import type { PasarelaPago } from './infra/pagos';
+import type { ColaVirtual } from './servicios/cola';
 
 /**
  * Dependencias compartidas por toda la API. Cada pieza tiene un adaptador real
@@ -19,4 +20,6 @@ export interface Contexto {
   colas: Colas;
   correos: Correos;
   pasarela: PasarelaPago;
+  /** Se crea al montar la app. */
+  colaVirtual?: ColaVirtual;
 }

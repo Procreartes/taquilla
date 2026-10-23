@@ -4,12 +4,14 @@ import otplib from 'otplib';
 import { PERMISOS, puede, NOMBRE_ROL } from '@taquilla/dominio';
 import type { Contexto } from '../contexto';
 import { COOKIE_SESION, crearSesion, sesionCompleta } from '../auth';
-import { cifrar, comprobarClave, descifrar, sha256 } from '../infra/cripto';
+import { cifrar, comprobarClave, descifrar, hashClave, sha256 } from '../infra/cripto';
 import { ErrorHttp, prohibido } from '../errores';
 import { auditar } from '../auditoria';
 
 const { authenticator } = otplib;
 authenticator.options = { window: 1 };
+
+const CLAVES_DEBILES = ['123456', 'password', 'contraseña', 'qwerty', 'taquilla', 'asombra', '000000', 'abcdef'];
 
 export async function rutasAuth(app: FastifyInstance, ctx: Contexto) {
   const LIMITE_ENTRAR = { config: { rateLimit: { max: ctx.config.LIMITE_ENTRAR_POR_MINUTO, timeWindow: '1 minute' } } };
@@ -24,6 +26,21 @@ export async function rutasAuth(app: FastifyInstance, ctx: Contexto) {
     await crearSesion(ctx, req, reply, u.id, !u.totp_activo);
     await auditar(ctx.db, { usuarioId: u.id, accion: 'auth.entrar', ip: req.ip });
     return { ok: true, necesita2fa: u.totp_activo || ctx.config.EXIGIR_2FA, configurar2fa: ctx.config.EXIGIR_2FA && !u.totp_activo };
+  });
+
+  // Definir la contraseña con el enlace de invitación (un solo uso, 7 días)
+  app.post('/api/auth/definir-clave', LIMITE_ENTRAR, async (req, reply) => {
+    const { token, clave } = z.object({ token: z.string().min(20).max(100), clave: z.string().min(12, 'La contraseña tiene que tener al menos 12 caracteres').max(200) }).parse(req.body);
+    if (CLAVES_DEBILES.some((d) => clave.toLowerCase().includes(d))) throw new ErrorHttp(400, 'Esa contraseña es demasiado fácil de adivinar', 'clave_debil');
+    const inv = await ctx.db.one<{ id: string; usuario_id: string }>(
+      `update invitaciones_equipo set usado_en = now() where token_hash = $1 and usado_en is null and caduca_en > now() returning id, usuario_id`, [sha256(token)],
+    );
+    if (!inv) throw new ErrorHttp(400, 'El enlace ha caducado o ya se usó. Pide a la administración uno nuevo.', 'enlace');
+    await ctx.db.query('update usuarios set hash_clave = $2 where id = $1', [inv.usuario_id, await hashClave(clave)]);
+    await ctx.db.query('delete from sesiones where usuario_id = $1', [inv.usuario_id]);
+    await auditar(ctx.db, { usuarioId: inv.usuario_id, accion: 'auth.clave_definida', ip: req.ip });
+    await crearSesion(ctx, req, reply, inv.usuario_id, false);
+    return { ok: true, configurar2fa: true };
   });
 
   // Solo en modo demostración: entrar con un usuario de prueba sin contraseña.

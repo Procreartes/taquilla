@@ -77,6 +77,8 @@ export default function Funcion({ params }: { params: Promise<{ id: string }> })
         )}
       </section>
 
+      {f.modo_venta !== 'libre' && puede('eventos.editar') && <Cola f={f} onGuardar={(cuerpo) => accion(() => api(`/api/funciones/${id}`, { metodo: 'PATCH', cuerpo }), 'Cola virtual guardada.')} />}
+
       {f.modo_venta !== 'libre' && (
         <form className="panel stack" onSubmit={guardarPrecios}>
           <h2>Precios por zona</h2>
@@ -95,5 +97,25 @@ export default function Funcion({ params }: { params: Promise<{ id: string }> })
       )}
       {msg && <p className={`aviso ${msg.tipo}`} role="status">{msg.texto}</p>}
     </div>
+  );
+}
+
+/** Cola virtual para salidas a la venta fuertes. */
+function Cola({ f, onGuardar }: { f: any; onGuardar: (c: object) => void }) {
+  const local = (iso: string | null) => (iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
+  const [activa, setActiva] = useState<boolean>(f.cola_virtual);
+  const [apertura, setApertura] = useState(local(f.cola_apertura));
+  const [ritmo, setRitmo] = useState<string>(f.cola_ritmo ? String(f.cola_ritmo) : '');
+  return (
+    <form className="panel stack" onSubmit={(e) => { e.preventDefault(); onGuardar({ cola_virtual: activa, cola_apertura: apertura ? new Date(apertura).toISOString() : null, cola_ritmo: ritmo ? Number(ritmo) : null }); }}>
+      <h2>Cola virtual</h2>
+      <p className="small muted">Para salidas a la venta con mucha gente: el público espera en una sala y entra a comprar por turnos, a un ritmo fijo.</p>
+      <label className="check"><input type="checkbox" checked={activa} onChange={(e) => setActiva(e.target.checked)} /> Activar la sala de espera</label>
+      <div className="g2">
+        <label className="campo">Hora de apertura de la venta<input type="datetime-local" value={apertura} onChange={(e) => setApertura(e.target.value)} /></label>
+        <label className="campo">Personas que entran por minuto<span className="ayuda">Vacío = valor por defecto de la plataforma</span><input type="number" min={1} value={ritmo} onChange={(e) => setRitmo(e.target.value)} /></label>
+      </div>
+      <div><button className="btn sec">Guardar cola</button></div>
+    </form>
   );
 }

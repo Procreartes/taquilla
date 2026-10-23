@@ -10,6 +10,8 @@ import PlanoSvg, { type EstadoButaca } from '@/componentes/PlanoSvg';
 import { api, eur, fechaLarga } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { accionFuncion } from '@/lib/funciones';
+import SalaEspera from '@/componentes/SalaEspera';
+import Turnstile from '@/componentes/Turnstile';
 
 type Zona = { codigo: string; nombre: string; color: string; precio_cent: number | null };
 
@@ -25,6 +27,9 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
   const [reserva, setReserva] = useState<any>(null);
   const [aviso, setAviso] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  const [pase, setPase] = useState<string | null>(null);
+  const [antibots, setAntibots] = useState('');
+  const recibirPase = useCallback((p: string) => setPase(p), []);
 
   const cargarDisp = useCallback(() => api(`/api/publico/funciones/${id}/disponibilidad`).then(setDisp).catch(() => {}), [id]);
   useEffect(() => {
@@ -67,14 +72,18 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
     setOcupado(true);
     setAviso('');
     try {
-      const r = await api('/api/publico/reservas', { cuerpo: { funcionId: id, ...cuerpo } });
+      const r = await api('/api/publico/reservas', { cuerpo: { funcionId: id, ...cuerpo, pase: pase || undefined, turnstile: antibots || undefined } });
       try {
         sessionStorage.setItem('reserva:' + id, r.token);
       } catch {}
       setReserva(r);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
-      if (e.codigo === 'ocupadas') {
+      if (e.codigo === 'sin_pase') {
+        try { sessionStorage.removeItem('cola:' + id); } catch {}
+        setPase(null);
+        setAviso(e.message);
+      } else if (e.codigo === 'ocupadas') {
         setSel((s) => s.filter((c) => !e.datos.ocupadas.includes(c)));
         setAviso(t('ocupadas'));
         cargarDisp();
@@ -117,6 +126,8 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
         </section>
       ) : reserva ? (
         <Paso2 reserva={reserva} f={f} onVolver={soltar} />
+      ) : f.cola && pase === null ? (
+        <SalaEspera funcionId={id} turnstile={f.turnstile} idioma={idioma} onPase={recibirPase} />
       ) : (
         <>
           <p className="small muted" aria-live="polite">{t('paso', { n: 1 })} · {t('paso1')}</p>
@@ -184,7 +195,8 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
                     </ul>
                   )}
                   <Totales importe={importe} n={n} gastos={gastos} f={f} />
-                  <button className="btn acento ancho" disabled={ocupado || !n} onClick={() => reservar(f.modo_venta === 'numerada' ? { butacas: sel } : { cantidad })}>{t('continuar')}</button>
+                  {!f.cola && <Turnstile clave={f.turnstile} onToken={setAntibots} idioma={idioma} />}
+                  <button className="btn acento ancho" disabled={ocupado || !n || (!!f.turnstile && !f.cola && !antibots)} onClick={() => reservar(f.modo_venta === 'numerada' ? { butacas: sel } : { cantidad })}>{t('continuar')}</button>
                   {f.modo_venta === 'numerada' && <button className="btn sec sm" onClick={() => setSel([])}>{t('vaciar')}</button>}
                 </>
               )}
