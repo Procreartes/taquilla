@@ -1,5 +1,5 @@
 # API de Taquilla (también se usa para el proceso «trabajador»)
-FROM node:22-alpine
+FROM node:25-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
