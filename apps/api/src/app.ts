@@ -16,13 +16,14 @@ import { rutasPagos } from './modulos/pagos';
 import { rutasPuerta } from './modulos/puerta';
 import { rutasCliente } from './modulos/cliente';
 import { rutasPanel } from './modulos/panel';
+import { rutasIntegraciones } from './modulos/integraciones';
 import { registrarAdjuntador } from './servicios/trabajos';
 import { pdfEntradas } from './servicios/entradas';
 import { ColaVirtual, ContadorMemoria, ContadorRedis } from './servicios/cola';
 import { registrarTrabajos } from './servicios/trabajos';
 
 export type Modulo = (app: FastifyInstance, ctx: Contexto) => Promise<void>;
-const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos, rutasPublico, rutasPagos, rutasPuerta, rutasCliente, rutasPanel];
+const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos, rutasPublico, rutasPagos, rutasPuerta, rutasCliente, rutasPanel, rutasIntegraciones];
 
 // El correo de confirmación lleva las entradas en PDF
 let pdfRegistrado = false;

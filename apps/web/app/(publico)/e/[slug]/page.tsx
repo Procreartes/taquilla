@@ -43,16 +43,16 @@ export default function Cartelera({ params }: { params: Promise<{ slug: string }
         <h1>{e.nombre}</h1>
       </header>
       <div role="group" aria-label={t('filtrarIsla')} className="fila" style={{ gap: 6 }}>
-        <button className="pill" aria-pressed={isla === 'todas'} aria-selected={isla === 'todas'} onClick={() => elegir('todas')}>{t('todas')}</button>
+        <button className="pill" aria-pressed={isla === 'todas'} onClick={() => elegir('todas')}>{t('todas')}</button>
         {islas.map((i) => (
-          <button key={i.id} className="pill" aria-pressed={isla === i.id} aria-selected={isla === i.id} onClick={() => elegir(i.id)} disabled={i.estado === 'proximamente'}
+          <button key={i.id} className="pill" aria-pressed={isla === i.id} onClick={() => elegir(i.id)} disabled={i.estado === 'proximamente'}
             style={isla === i.id ? { background: i.colores.acento, color: '#fff', borderColor: i.colores.acento } : undefined}>
             <i className="mu" style={{ background: i.colores.acento, borderRadius: 99 }} aria-hidden="true" />
             {i.nombre}{i.estado === 'proximamente' && <span className="small"> · {i.etiqueta ?? t('proximamente')}</span>}
           </button>
         ))}
       </div>
-      <p className="sr-only" role="status" aria-live="polite">{funciones.length}</p>
+      <p className="sr-only" role="status" aria-live="polite">{funciones.length} · {t('cartelera')}</p>
       <div className="rejilla">
         {funciones.map((f) => {
           const a = accionFuncion(f);

@@ -85,3 +85,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose build api web
+      # Prueba de humo del entorno completo: PostgreSQL, Redis, Mailpit, API, trabajador y web
+      - run: docker compose up -d
+      - name: Esperar a la API y a la web
+        run: |
+          for i in $(seq 1 60); do curl -fs http://localhost:3000/api/salud && break; sleep 3; done
+          curl -fs http://localhost:3000/api/salud | grep '"db":"postgres"'
+          curl -fs http://localhost:3000/api/publico/eventos/asombra-2026 | grep -q 'ASOMBRA 2026'
+          curl -fs -o /dev/null http://localhost:3000/e/asombra-2026
+      - if: failure()
+        run: docker compose logs --tail 200
+      - if: always()
+        run: docker compose down -v

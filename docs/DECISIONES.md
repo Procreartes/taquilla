@@ -140,3 +140,17 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-054 · Copias cifradas con `age` antes de salir del servidor** y subidas con `rclone` a Backblaze B2 (con Object Lock) y al Synology. Sin clave de cifrado configurada, la copia no se sube a ningún sitio.
 
 **D-055 · La prueba de carga se negará a ejecutarse fuera del modo demostración**, para que nadie la lance por error contra producción.
+
+## Fase 8 · Integraciones y acabado
+
+**D-056 · Webhooks sin datos personales.** Los avisos a n8n llevan la función, la ocupación y el pedido (código, importe, número de entradas), pero no el nombre ni el correo del comprador. Firmados con HMAC por organizador, con reintentos y registro de cada entrega. En producción solo `https` públicas (protección SSRF).
+
+**D-057 · El aviso del 90 % se envía una sola vez por función** (se marca en la base de datos al cruzarlo).
+
+**D-058 · El widget abre la compra en Taquilla en una pestaña nueva** en lugar de comprar dentro del iframe: los navegadores bloquean cada vez más las cookies de terceros y el pago dentro de un iframe da problemas (y confunde al comprador sobre dónde está pagando).
+
+**D-059 · Idiomas.** Web pública, compra, cuenta, widget y correo de confirmación en es/en/de; traducciones marcadas para revisión nativa. Panel solo en español (D-013). Los textos legales por defecto solo en español (los traduce cada organizador si los necesita).
+
+**D-060 · Accesibilidad revisada con axe-core (WCAG 2.2 AA)** en cartelera, ficha y compra, pedido, entrar, panel de ventas, editor de planos y puerta: sin infracciones tras corregir un atributo ARIA en los filtros. Vista móvil (375 px) sin desplazamiento horizontal. Queda pendiente una revisión manual con lector de pantalla (NVDA/VoiceOver) por una persona experta.
+
+**D-061 · La web de ASOMBRA no se ha tocado.** El widget está listo para insertarlo cuando se decida vender ASOMBRA aquí.
