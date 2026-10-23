@@ -126,3 +126,17 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-048 · Datos de público agregados con mínimo de 5 personas por grupo** (los grupos más pequeños se suman en «Otros»), para que nadie sea identificable en informes de subvenciones o de impacto.
 
 **D-049 · Exportaciones CSV (UTF-8, punto y coma, para Excel en español) y Excel (.xlsx).** Se neutralizan las celdas que empiezan por `=`, `+`, `-` o `@` (inyección de fórmulas) y cada exportación queda en la auditoría.
+
+## Fase 7 · Seguridad y carga
+
+**D-050 · Cola virtual por tiempo, sin estado.** Los admitidos se calculan con la hora de apertura y el ritmo (personas por minuto), así todas las instancias de la API coinciden sin coordinarse. Cada persona tiene un número correlativo (Redis `INCR`) y, al llegar su turno, un **pase firmado de 15 minutos** sin el cual no se puede reservar. Se activa por función desde el panel. Ritmo por defecto: 300 personas/minuto (`COLA_PASES_POR_MINUTO`).
+
+**D-051 · Turnstile solo si hay claves.** En local no hay Cloudflare: sin `TURNSTILE_SECRET` la comprobación se omite. Con claves, se exige en la reserva y al entrar en la cola.
+
+**D-052 · Alta de personas del equipo por invitación.** Al añadir a alguien se le envía un enlace de un solo uso (7 días) para definir su contraseña (mínimo 12 caracteres, sin palabras obvias) y después se le pide activar la 2FA.
+
+**D-053 · CSP solo en producción.** El modo de desarrollo de Next.js necesita `eval`; la política de contenidos estricta se aplica al compilar para producción.
+
+**D-054 · Copias cifradas con `age` antes de salir del servidor** y subidas con `rclone` a Backblaze B2 (con Object Lock) y al Synology. Sin clave de cifrado configurada, la copia no se sube a ningún sitio.
+
+**D-055 · La prueba de carga se negará a ejecutarse fuera del modo demostración**, para que nadie la lance por error contra producción.

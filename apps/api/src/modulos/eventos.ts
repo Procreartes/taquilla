@@ -41,6 +41,9 @@ const DatosFuncion = z.object({
   venta_externa_url: z.string().url().max(500).nullable().optional(),
   verificar: z.boolean().optional(),
   publicada: z.boolean().optional(),
+  cola_virtual: z.boolean().optional(),
+  cola_apertura: z.string().datetime({ offset: true }).nullable().optional(),
+  cola_ritmo: z.number().int().min(1).max(100_000).nullable().optional(),
 });
 
 /** Zonas a las que hay que poner precio en una función. */

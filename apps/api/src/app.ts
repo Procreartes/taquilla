@@ -18,6 +18,7 @@ import { rutasCliente } from './modulos/cliente';
 import { rutasPanel } from './modulos/panel';
 import { registrarAdjuntador } from './servicios/trabajos';
 import { pdfEntradas } from './servicios/entradas';
+import { ColaVirtual, ContadorMemoria, ContadorRedis } from './servicios/cola';
 import { registrarTrabajos } from './servicios/trabajos';
 
 export type Modulo = (app: FastifyInstance, ctx: Contexto) => Promise<void>;
@@ -32,6 +33,7 @@ function registrarPdf() {
 }
 
 export async function construirApp(ctx: Contexto, opciones: { registro?: boolean } = {}) {
+  ctx.colaVirtual ??= new ColaVirtual(ctx, ctx.redis ? new ContadorRedis(ctx.redis) : new ContadorMemoria());
   const app = Fastify({
     logger: opciones.registro ? { level: process.env.LOG_NIVEL ?? (ctx.config.NODE_ENV === 'production' ? 'info' : 'warn'), redact: ['req.headers.cookie', 'req.headers.authorization'] } : false,
     // detrás de Cloudflare/Traefik: TRUST_PROXY=true o la lista de redes del proxy

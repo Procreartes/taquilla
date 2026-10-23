@@ -5,6 +5,7 @@ import type { Contexto } from '../contexto';
 import { exigir, exigirSuperadmin, sesionCompleta } from '../auth';
 import { auditar } from '../auditoria';
 import { ErrorHttp, conflicto, noEncontrado } from '../errores';
+import { sha256, tokenAleatorio } from '../infra/cripto';
 
 const COLOR = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const TEXTOS_LEGALES = z.record(z.string().max(10), z.record(z.string().max(40), z.string().max(50_000)));
@@ -75,7 +76,23 @@ export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
       if (ya) throw conflicto('Esa persona ya está en el equipo');
       await t.query('insert into membresias (usuario_id, organizador_id, rol) values ($1, $2, $3)', [u!.id, c.organizadorId, d.rol]);
       await auditar(t, { organizadorId: c.organizadorId, usuarioId: c.usuarioId, accion: 'equipo.alta', entidad: 'usuario', entidadId: u!.id, datos: { email, rol: d.rol }, ip: req.ip });
-      return { id: u!.id, email, nombre: d.nombre, rol: d.rol };
+      const sinClave = await t.one('select 1 from usuarios where id = $1 and hash_clave is null', [u!.id]);
+      let token: string | null = null;
+      if (sinClave) {
+        token = tokenAleatorio(24);
+        await t.query(`insert into invitaciones_equipo (usuario_id, token_hash, caduca_en) values ($1, $2, now() + interval '7 days')`, [u!.id, sha256(token)]);
+      }
+      return { id: u!.id, email, nombre: d.nombre, rol: d.rol, token };
+    }).then(async (r) => {
+      const org = await ctx.db.one<{ nombre: string }>('select nombre from organizadores where id = $1', [c.organizadorId]);
+      const enlace = r.token ? `${ctx.config.URL_PUBLICA}/entrar/definir?t=${r.token}` : `${ctx.config.URL_PUBLICA}/entrar`;
+      await ctx.correos.enviar({
+        organizadorId: c.organizadorId, para: r.email, asunto: `Te han dado acceso a Taquilla · ${org!.nombre}`,
+        html: `<p>Hola ${r.nombre.replace(/[<>&]/g, '')}:</p><p>Ya tienes acceso al panel de <b>${org!.nombre.replace(/[<>&]/g, '')}</b>.</p><p><a href="${enlace}">${r.token ? 'Define tu contraseña' : 'Entrar al panel'}</a>${r.token ? ' (el enlace caduca en 7 días)' : ''}.</p><p>Si tu organización usa Microsoft 365, también puedes entrar con tu cuenta de Microsoft.</p>`,
+        texto: `Ya tienes acceso al panel de ${org!.nombre}. ${r.token ? 'Define tu contraseña' : 'Entra'} aquí: ${enlace}`,
+      });
+      const { token: _t, ...publico } = r;
+      return publico;
     });
   });
 
