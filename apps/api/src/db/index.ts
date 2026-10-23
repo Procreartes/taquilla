@@ -74,25 +74,19 @@ export async function conectarPostgres(url: string): Promise<Db> {
 /** dir = carpeta donde guardar los datos; sin dir, base de datos en memoria (tests). */
 export async function conectarPglite(dir?: string): Promise<Db> {
   const { PGlite } = await import('@electric-sql/pglite');
-  const db = new PGlite(dir, {
-    parsers: {
-      [OID_INT8]: (v: string) => Number(v),
-      [OID_NUMERIC]: (v: string) => Number(v),
-      [OID_DATE]: (v: string) => v,
-    },
-  });
+  const db = new PGlite(dir);
   await db.waitReady;
-  // PGlite ignora el parser de numeric: se convierte aquí para que se comporte igual que pg
-  const numerico = (r: { rows: any[]; fields: { name: string; dataTypeID: number }[] }) => {
-    const campos = r.fields.filter((f) => f.dataTypeID === OID_NUMERIC).map((f) => f.name);
-    if (campos.length) for (const fila of r.rows) for (const k of campos) if (fila[k] !== null) fila[k] = Number(fila[k]);
-    return r;
+  // En esta versión de PGlite los conversores solo se aplican si se pasan en cada consulta
+  const parsers = {
+    [OID_INT8]: (v: string) => Number(v),
+    [OID_NUMERIC]: (v: string) => Number(v),
+    [OID_DATE]: (v: string) => v,
   };
-  const base = consultor(async (s, p) => numerico(await db.query(s, p as any[])), (s) => db.exec(s));
+  const base = consultor((s, p) => db.query(s, p as any[], { parsers }), (s) => db.exec(s));
   return {
     ...base,
     tipo: 'pglite',
-    tx: (fn) => db.transaction((t) => fn(consultor(async (s, p) => numerico(await t.query(s, p as any[])), (s) => t.exec(s)))),
+    tx: (fn) => db.transaction((t) => fn(consultor((s, p) => t.query(s, p as any[], { parsers }), (s) => t.exec(s)))),
     async close() {
       await db.close();
     },

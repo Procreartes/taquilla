@@ -4,6 +4,10 @@ import { conectarPglite, conectarPostgres, migrar } from '../src/db';
 import { construirApp } from '../src/app';
 import type { Contexto } from '../src/contexto';
 import { sembrar } from '../src/semilla';
+import { MemoriaAlmacen, RedisAlmacen } from '../src/infra/almacen';
+import { ColasEnProceso } from '../src/infra/colas';
+import { crearCorreos } from '../src/infra/correo';
+import { crearPasarelaSimulada } from '../src/infra/pagos';
 
 export const CLAVE_TEST = 'clave-de-los-tests-123';
 
@@ -12,7 +16,7 @@ export const CLAVE_TEST = 'clave-de-los-tests-123';
  * (en CI), usa un PostgreSQL real con un esquema limpio.
  */
 export async function contextoPrueba(extra: Partial<Record<string, string>> = {}): Promise<Contexto> {
-  const config: Config = leerConfig({ NODE_ENV: 'test', MODO_DEMO: 'true', CLAVE_USUARIOS_PRUEBA: CLAVE_TEST, LIMITE_ENTRAR_POR_MINUTO: '10000', ...extra } as any);
+  const config: Config = leerConfig({ NODE_ENV: 'test', MODO_DEMO: 'true', CLAVE_USUARIOS_PRUEBA: CLAVE_TEST, LIMITE_ENTRAR_POR_MINUTO: '10000', LIMITE_COMPRA_POR_MINUTO: '100000', LIMITE_GLOBAL_POR_MINUTO: '100000', ...extra } as any);
   let db;
   if (process.env.TEST_DATABASE_URL) {
     db = await conectarPostgres(process.env.TEST_DATABASE_URL);
@@ -22,7 +26,19 @@ export async function contextoPrueba(extra: Partial<Record<string, string>> = {}
   }
   await migrar(db);
   await sembrar(db, config);
-  return { config, db, redis: null } as Contexto;
+  let redis = null, almacen;
+  if (process.env.TEST_REDIS_URL) {
+    const { Redis } = await import('ioredis');
+    redis = new Redis(process.env.TEST_REDIS_URL);
+    almacen = new RedisAlmacen(redis, 'test' + Math.random().toString(36).slice(2, 8));
+  } else almacen = new MemoriaAlmacen();
+  return {
+    config, db, redis: null, almacen,
+    colas: new ColasEnProceso((msg, e) => { if (process.env.TEST_LOG) console.error(msg, e); }),
+    correos: await crearCorreos(db, { remitente: 'Taquilla <test@taquilla.test>', guardarAdjuntos: true }),
+    pasarela: crearPasarelaSimulada('secreto-pasarela-tests', 'http://localhost:3000'),
+    redisTest: redis,
+  } as Contexto;
 }
 
 export class Cliente {
@@ -64,5 +80,5 @@ export class Cliente {
 export async function montar(extra?: Partial<Record<string, string>>) {
   const ctx = await contextoPrueba(extra);
   const app = await construirApp(ctx);
-  return { ctx, app, cliente: () => new Cliente(app), cerrar: async () => { await app.close(); await ctx.db.close(); } };
+  return { ctx, app, cliente: () => new Cliente(app), cerrar: async () => { await ctx.colas.vaciar(); await app.close(); await (ctx as any).redisTest?.quit(); await ctx.db.close(); } };
 }

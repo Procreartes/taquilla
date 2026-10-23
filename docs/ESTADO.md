@@ -9,7 +9,7 @@
 | 1 · Base | ✅ Terminada |
 | 2 · Planos | ✅ Terminada |
 | 3 · Eventos y funciones | ✅ Terminada |
-| 4 · Compra | ⏳ Pendiente |
+| 4 · Compra | ✅ Terminada |
 | 5 · Entradas y puerta | ⏳ Pendiente |
 | 6 · Panel y dinero | ⏳ Pendiente |
 | 7 · Seguridad y carga | ⏳ Pendiente |
@@ -84,6 +84,31 @@
 3. Escribe un precio en «Patio de butacas», guarda: ahora dice «1 zona». Pon también «Anfiteatro» y guarda: el botón «Poner a la venta» se activa. (No lo pulses si no quieres; es un dato de prueba.)
 4. Abre «La Maga»: indica que su venta oficial está en Entradas Canarias y no deja venderla aquí.
 5. Abajo del evento, el reparto de coproducción: si pones 60 % y 30 % y guardas, avisa de que debe sumar 100 %.
+
+## Fase 4 · Compra
+
+**Terminado**
+- Web pública: cartelera del festival con filtro por isla (colores de ASOMBRA), ficha de función, compra en 3 pasos como invitado. En español, inglés y alemán.
+- Elegir butaca en el plano o «mejor sitio disponible» (juntas, fila más cercana, centradas; PMR solo si se pide, con su acompañante). Aforo general por cantidad.
+- Reserva de 10 minutos sin sobreventa (probado con cientos de compras a la vez), máximo 8 entradas por compra, gastos de gestión visibles desde el primer paso.
+- Pago con Stripe Connect (modo prueba) o con la pasarela simulada; los avisos de pago son la fuente de verdad y no se procesan dos veces.
+- Entradas emitidas, factura simplificada, correo de confirmación (capturado: se ve en el panel → **Correos de prueba**).
+- Devolución automática si un pago llega cuando la butaca ya no está libre.
+- Cambiar el plano de una función con ventas, trasladando o reasignando butacas (y avisando por correo).
+
+**Es demostración**
+- La pasarela simulada (no cobra nada). Las tres funciones «Prueba técnica de venta».
+
+**Espera claves reales**
+- Claves de **prueba** de Stripe y alta de la cuenta conectada (ver `docs/PAGOS.md`). Turnstile de Cloudflare.
+
+**Cómo probarlo (una compra de prueba)**
+1. Abre `http://localhost:3000` → **ASOMBRA 2026**. Pulsa el filtro **Fuerteventura**.
+2. En «Prueba técnica de venta · Antigua» pulsa **Comprar**.
+3. Pulsa **Buscar** en «Mejor sitio disponible» (o toca butacas en el plano y **Continuar**).
+4. Rellena nombre y correo (inventados), marca las dos casillas obligatorias y pulsa **Pagar**.
+5. En la página de pago simulado deja la tarjeta 4242 4242 4242 4242 y pulsa **Pagar**.
+6. Verás tus entradas y la factura. En el panel (**Entrar** → «Gerencia ASOMBRA») → **Correos de prueba** está el correo que habría recibido la persona.
 
 ## Para Naroe
 

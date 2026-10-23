@@ -118,3 +118,6 @@ details.bloque>div{padding:0 12px 12px;display:grid;gap:10px}
 .segmentos button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cifras{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
 .cifras b{font-family:var(--f-display);font-size:18px}
+
+.capital{display:inline-block}
+.capital::first-letter{text-transform:uppercase}
