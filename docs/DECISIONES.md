@@ -44,3 +44,17 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-012 · Un organizador siempre tiene al menos una persona con rol de administración.** El sistema impide quitar o rebajar al último.
 
 **D-013 · Panel en español; web pública en español, inglés y alemán.** El equipo interno trabaja en español. La traducción del panel queda para más adelante si entran clientes externos que la pidan.
+
+## Fase 2 · Planos
+
+**D-014 · El generador es el del prototipo, línea a línea.** Se ha portado `generar` y `comprobar` a TypeScript sin cambiar la lógica, y un test comprueba que, para Antigua y Puerto del Rosario, produce *exactamente* las mismas butacas (código, zona, tipo y coordenadas) que los ficheros oficiales de `datos/planos/`. Así el plano que se vende es el mismo que se validó.
+
+**D-015 · Congelado protegido también en la base de datos.** Además de la comprobación en la API, un disparador de PostgreSQL impide modificar o borrar una versión congelada. Para cambiar un plano a la venta se crea una versión nueva (copia de la última) y se asigna a las funciones (el traslado de entradas vendidas se hace en la fase 3).
+
+**D-016 · «Mejor sitio» no usa butacas de acompañante ni espacios PMR.** Salvo que se pida expresamente una plaza PMR: entonces da el espacio y, al lado, primero las butacas marcadas como acompañante. Las de acompañante sí se pueden elegir a mano en el plano.
+
+**D-017 · Navegación por teclado del plano.** En lugar de 500 paradas de tabulador, el plano es una sola parada: dentro, las flechas mueven entre butacas e Intro/Espacio elige. Cada butaca tiene su nombre para lectores de pantalla («Fila F-3, butaca 12, acompañante»).
+
+**D-018 · Guardado automático del borrador.** El editor guarda solo cada cambio a los 0,7 s; el servidor vuelve a calcular las butacas y la comprobación, así que lo que se guarda nunca depende del navegador.
+
+**D-019 · Importar no se fía de la lista de butacas del fichero.** Al importar un `plano-taquilla/1` se recalculan las butacas desde la receta y, si no coinciden con las que trae el fichero, se avisa (se usa siempre la receta).

@@ -2,7 +2,7 @@ import { construirApp } from './app';
 import { crearContexto, cerrarContexto } from './arranque';
 
 const ctx = await crearContexto();
-if (process.env.SEMBRAR === 'true' && ctx.config.NODE_ENV !== 'production') {
+if ((process.env.SEMBRAR === 'true' || ctx.config.modoDemo) && ctx.config.NODE_ENV !== 'production') {
   const { sembrar } = await import('./semilla');
   await sembrar(ctx.db, ctx.config);
 }

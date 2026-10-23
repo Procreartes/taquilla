@@ -4,7 +4,14 @@
  */
 import type { Config } from '../config';
 import type { Db } from '../db';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { DocumentoPlano } from '@taquilla/dominio';
 import { hashClave, tokenAleatorio } from '../infra/cripto';
+import { crearVersion } from '../modulos/planos';
+
+export const CARPETA_DATOS = join(import.meta.dirname, '..', '..', '..', '..', 'datos');
+export const leerDatos = <T = any>(ruta: string): T => JSON.parse(readFileSync(join(CARPETA_DATOS, ruta), 'utf8'));
 
 export const ORG_ASOMBRA = 'asombra-coproduccion';
 export const ORG_AISLAMIENTO = 'teatro-de-prueba';
@@ -71,7 +78,37 @@ async function asegurarOrganizador(db: Db, o: { slug: string; nombre: string; ra
   return r!.id;
 }
 
+/** Recintos con plano oficial (Cabildo de Fuerteventura) para el organizador de ASOMBRA. */
+export async function sembrarPlanos(db: Db, organizadorId: string) {
+  const recintos = [
+    { codigo: 'auditorio-pdr', nombre: 'Auditorio Insular', municipio: 'Puerto del Rosario', isla: 'fuerteventura', fichero: 'puerto-del-rosario.json' },
+    { codigo: 'antigua', nombre: 'Centro Cultural Polivalente de Antigua', municipio: 'Antigua', isla: 'fuerteventura', fichero: 'antigua.json' },
+  ];
+  const ids: Record<string, { recinto: string; version: string }> = {};
+  for (const r of recintos) {
+    const fila = await db.one<{ id: string }>(
+      `insert into recintos (organizador_id, codigo, nombre, municipio, isla) values ($1, $2, $3, $4, $5)
+       on conflict (organizador_id, codigo) do update set nombre = excluded.nombre returning id`,
+      [organizadorId, r.codigo, r.nombre, r.municipio, r.isla],
+    );
+    let v = await db.one<{ id: string }>(
+      `select v.id from versiones_plano v join planos p on p.id = v.plano_id where p.recinto_id = $1 order by v.numero limit 1`,
+      [fila!.id],
+    );
+    if (!v) {
+      const doc = leerDatos<DocumentoPlano>(join('planos', r.fichero));
+      v = await db.tx(async (t) => {
+        const p = await t.one<{ id: string }>('insert into planos (organizador_id, recinto_id, nombre) values ($1, $2, $3) returning id', [organizadorId, fila!.id, doc.plano.nombre]);
+        return (await crearVersion(t, organizadorId, p!.id, doc.plano, null)) as { id: string };
+      });
+    }
+    ids[r.codigo] = { recinto: fila!.id, version: v!.id };
+  }
+  return ids;
+}
+
 export async function sembrar(db: Db, config: Config) {
   const base = await sembrarBase(db, config);
-  return base;
+  const planos = await sembrarPlanos(db, base.asombra);
+  return { ...base, planos };
 }
