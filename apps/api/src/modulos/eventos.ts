@@ -361,6 +361,58 @@ export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
     });
   });
 
+  // Cambiar el plano de una función que ya tiene ventas: las entradas se trasladan a la nueva
+  // versión (los códigos de butaca son estables) y las que no existan en ella hay que reasignarlas.
+  app.post('/api/funciones/:id/cambiar-plano', async (req) => {
+    const c = exigir(ctx, req, 'eventos.editar');
+    const { id } = z.object({ id: uuid }).parse(req.params);
+    const d = z.object({ versionId: uuid, reasignaciones: z.record(z.string().max(60), z.string().max(60)).default({}) }).parse(req.body);
+    const r = await ctx.db.tx(async (t) => {
+      const f = await t.one<any>('select * from funciones where id = $1 and organizador_id = $2 for update', [id, c.organizadorId]);
+      if (!f) throw noEncontrado('Función');
+      if (f.modo_venta !== 'numerada') throw conflicto('Solo las funciones numeradas tienen plano');
+      await validarRecintoYPlano(t, c.organizadorId, f.recinto_id, 'numerada', d.versionId);
+      const v = await t.one<any>('select butacas, comprobacion from versiones_plano where id = $1', [d.versionId]);
+      if (!v.comprobacion?.ok) throw conflicto('El plano nuevo no cuadra con el aforo oficial');
+      const nuevas = new Map<string, any>((v.butacas as any[]).map((b) => [b.codigo, b]));
+      const vivas = await t.query<{ id: string; butaca_codigo: string; pedido_id: string }>(
+        `select id, butaca_codigo, pedido_id from entradas where funcion_id = $1 and butaca_codigo is not null and estado in ('valida', 'usada')`, [id],
+      );
+      const vendidas = new Set(vivas.map((e) => e.butaca_codigo));
+      const sinSitio = vivas.filter((e) => !nuevas.has(e.butaca_codigo) || nuevas.get(e.butaca_codigo).bloqueado).map((e) => e.butaca_codigo);
+      const faltan = sinSitio.filter((cod) => !d.reasignaciones[cod]);
+      if (faltan.length) throw conflicto(`Hay ${faltan.length} entradas vendidas cuyas butacas no existen en el plano nuevo: reasígnalas`, 'reasignar', { butacas: faltan });
+      const destinos = new Set<string>();
+      for (const viejo of sinSitio) {
+        const destino = d.reasignaciones[viejo];
+        const b = nuevas.get(destino);
+        if (!b || b.bloqueado) throw invalido(`La butaca ${destino} no existe en el plano nuevo o está bloqueada`);
+        if ((vendidas.has(destino) && !sinSitio.includes(destino)) || destinos.has(destino)) throw conflicto(`La butaca ${destino} ya está ocupada`);
+        destinos.add(destino);
+      }
+      const movidas: { entrada: string; pedido: string; de: string; a: string }[] = [];
+      for (const e of vivas) {
+        if (!sinSitio.includes(e.butaca_codigo)) continue;
+        const a = d.reasignaciones[e.butaca_codigo];
+        const b = nuevas.get(a);
+        const desc = `${b.fila} · ${b.tipo === 'silla_ruedas' ? 'Espacio PMR' : 'Butaca'} ${String(b.numero).replace('PMR ', '')}`;
+        await t.query('update entradas set butaca_codigo = $2, descripcion = $3 where id = $1', [e.id, a, desc]);
+        movidas.push({ entrada: e.id, pedido: e.pedido_id, de: e.butaca_codigo, a });
+      }
+      await t.query('update funciones set version_plano_id = $2 where id = $1', [id, d.versionId]);
+      if (f.estado !== 'borrador') await congelarVersion(t, c.organizadorId, d.versionId);
+      const zonas = (await zonasDeFuncion(t, { modo_venta: 'numerada', version_plano_id: d.versionId })).map((z) => z.codigo);
+      await t.query('delete from precios_funcion where funcion_id = $1 and not (zona_codigo = any($2::text[]))', [id, zonas]);
+      await auditar(t, {
+        organizadorId: c.organizadorId, usuarioId: c.usuarioId, accion: 'funcion.cambiar_plano', entidad: 'funcion', entidadId: id,
+        datos: { de: f.version_plano_id, a: d.versionId, trasladadas: vivas.length - movidas.length, reasignadas: movidas }, ip: req.ip,
+      });
+      return { trasladadas: vivas.length - movidas.length, reasignadas: movidas };
+    });
+    for (const pedido of new Set(r.reasignadas.map((x) => x.pedido))) await ctx.colas.encolar('correo.reasignacion', { pedidoId: pedido }).catch(() => {});
+    return r;
+  });
+
   app.post('/api/funciones/:id/pausar', async (req) => {
     const c = exigir(ctx, req, 'eventos.editar');
     const { id } = z.object({ id: uuid }).parse(req.params);

@@ -55,6 +55,8 @@ const Esquema = z.object({
   ENTRA_CLIENT_SECRET: opcional,
   // Venta
   LIMITE_ENTRAR_POR_MINUTO: z.coerce.number().default(10),
+  LIMITE_COMPRA_POR_MINUTO: z.coerce.number().default(30),
+  LIMITE_GLOBAL_POR_MINUTO: z.coerce.number().default(600),
   RESERVA_MINUTOS: z.coerce.number().default(10),
   COLA_VIRTUAL_ACTIVA: z.preprocess((v) => v === 'true' || v === '1', z.boolean()).default(false),
   COLA_PASES_POR_MINUTO: z.coerce.number().default(300),

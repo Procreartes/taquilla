@@ -11,9 +11,12 @@ import { rutasOrganizadores } from './modulos/organizadores';
 import { rutasEntra } from './modulos/entra';
 import { rutasPlanos } from './modulos/planos';
 import { rutasEventos } from './modulos/eventos';
+import { rutasPublico } from './modulos/publico';
+import { rutasPagos } from './modulos/pagos';
+import { registrarTrabajos } from './servicios/trabajos';
 
 export type Modulo = (app: FastifyInstance, ctx: Contexto) => Promise<void>;
-const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos];
+const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos, rutasPublico, rutasPagos];
 
 export async function construirApp(ctx: Contexto, opciones: { registro?: boolean } = {}) {
   const app = Fastify({
@@ -27,7 +30,7 @@ export async function construirApp(ctx: Contexto, opciones: { registro?: boolean
   await app.register(cookie);
   await app.register(rateLimit, {
     global: true,
-    max: 600,
+    max: ctx.config.LIMITE_GLOBAL_POR_MINUTO,
     timeWindow: '1 minute',
     ...(ctx.redis ? { redis: ctx.redis, nameSpace: 'taq-limite:' } : {}),
     errorResponseBuilder: (_req, c) => ({ statusCode: 429, error: 'demasiadas_peticiones', mensaje: `Demasiadas peticiones. Espera ${Math.ceil(c.ttl / 1000)} s y vuelve a intentarlo.` }),
@@ -61,6 +64,7 @@ export async function construirApp(ctx: Contexto, opciones: { registro?: boolean
   app.get('/api/salud', async () => ({ ok: true, modoDemo: ctx.config.modoDemo, db: ctx.db.tipo }));
 
   for (const m of MODULOS) await m(app, ctx);
+  registrarTrabajos(ctx);
   return app;
 }
 

@@ -89,6 +89,8 @@ export default function DatosOrganizador() {
       <section className="panel stack">
         <h2>Cobros (Stripe Connect)</h2>
         <p className="small">Estado: <b>{String(org.stripe_estado).replace('_', ' ')}</b>{org.stripe_cuenta_id && <> · <span className="mono">{org.stripe_cuenta_id}</span></>}</p>
+        <p className="small muted">Cada organizador cobra sus ventas en su propia cuenta de Stripe; la plataforma se queda los gastos de gestión. Solo modo de prueba.</p>
+        <div><button type="button" className="btn sec sm" onClick={async () => { try { const r = await api('/api/organizador/stripe/conectar', { cuerpo: {} }); window.location.href = r.url; } catch (e: any) { setMsg({ tipo: 'bad', texto: e.message }); } }}>{org.stripe_cuenta_id ? 'Continuar el alta en Stripe' : 'Conectar con Stripe'}</button></div>
       </section>
       {msg && <p className={`aviso ${msg.tipo}`} role="status">{msg.texto}</p>}
       <div><button className="btn">Guardar cambios</button></div>

@@ -74,3 +74,21 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-025 · Las direcciones de los eventos (slug) son únicas en toda la plataforma**, porque forman parte de la dirección pública de la cartelera (`/e/asombra-2026`).
 
 **D-026 · Cambiar el plano de una función con ventas.** Se impide desde la ficha normal; se hace con «Cambiar plano», que traslada las entradas a la nueva versión si sus butacas existen y, si no, pide reasignarlas. Se completa en la fase 4, cuando existen las entradas.
+
+## Fase 4 · Compra
+
+**D-027 · La reserva empieza al pulsar «Continuar»**, no al tocar cada butaca (como hacía el prototipo). Así no se bloquean butacas de gente que solo está mirando y Redis trabaja menos en las salidas a la venta fuertes. El plano se refresca cada 15 s y, si alguien se adelanta, se avisa y se quitan esas butacas de la selección.
+
+**D-028 · La reserva se alarga a 31 minutos al ir a pagar.** Stripe Checkout no permite páginas de pago de menos de 30 minutos. En el paso de datos se muestran los 10 minutos; al pulsar «Pagar», la reserva se alarga para cubrir la página de pago. Si se cancela el pago, la reserva se libera al momento.
+
+**D-029 · Tres capas contra la sobreventa** (ver ARQUITECTURA §5). Test: 300 reservas simultáneas de la misma butaca → 1 ok; 200 pagos simultáneos sobre la misma butaca con reservas caducadas → 1 entrada y 199 devoluciones automáticas; aforo general con 250 intentos para 200 plazas → como mucho 200. En CI también contra Redis 7 y PostgreSQL 16 reales.
+
+**D-030 · Pedido con enlace secreto.** Cada pedido tiene un enlace privado (`/pedido/…`) que hace de «llave» para ver las entradas sin crear cuenta (compra como invitado). En la base de datos solo se guarda su huella y una copia cifrada para reenviarlo por correo.
+
+**D-031 · Factura simplificada con numeración correlativa sin huecos** por organizador y año (`ASOMBR-2026-000001`), asignada en la misma transacción que emite las entradas. Plantilla marcada como pendiente de la asesoría.
+
+**D-032 · Pasarela simulada.** Sin claves de Stripe se usa una pasarela local que firma sus avisos con HMAC y los procesa por el mismo camino que un webhook real. No existe en producción.
+
+**D-033 · «Mejor sitio» reserva directamente.** Al buscar mejor sitio, la plataforma elige y reserva a la vez (en el servidor), para que nadie se lo quite entre que se calcula y se reserva.
+
+**D-034 · Datos de procedencia opcionales** (código postal, municipio, isla, país) para los informes agregados de público. Consentimientos separados: condiciones y privacidad (obligatorios), novedades del organizador y novedades de la plataforma (opcionales, desmarcados).

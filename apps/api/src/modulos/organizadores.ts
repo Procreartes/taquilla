@@ -116,6 +116,34 @@ export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
     );
   });
 
+  // ---- Correos capturados (en local no se envía nada real) ----
+  app.get('/api/organizador/correos', async (req) => {
+    const c = exigir(ctx, req, 'correos.ver');
+    return ctx.db.query(
+      `select id, para, asunto, estado, error, creado_en, jsonb_path_query_array(adjuntos, '$[*].nombre') as adjuntos
+         from correos_salientes where organizador_id = $1 order by creado_en desc limit 200`,
+      [c.organizadorId],
+    );
+  });
+
+  app.get('/api/organizador/correos/:id', async (req) => {
+    const c = exigir(ctx, req, 'correos.ver');
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const r = await ctx.db.one('select id, para, asunto, html, texto, adjuntos, estado, creado_en from correos_salientes where id = $1 and organizador_id = $2', [id, c.organizadorId]);
+    if (!r) throw noEncontrado('Correo');
+    return { ...r, adjuntos: (r.adjuntos as any[]).map((a, i) => ({ nombre: a.nombre, tipo: a.tipo, bytes: a.bytes, descargable: !!a.base64, indice: i })) };
+  });
+
+  app.get('/api/organizador/correos/:id/adjunto/:i', async (req, reply) => {
+    const c = exigir(ctx, req, 'correos.ver');
+    const { id, i } = z.object({ id: z.string().uuid(), i: z.coerce.number().int().min(0).max(50) }).parse(req.params);
+    const r = await ctx.db.one('select adjuntos from correos_salientes where id = $1 and organizador_id = $2', [id, c.organizadorId]);
+    const a = (r?.adjuntos as any[] | undefined)?.[i];
+    if (!a?.base64) throw noEncontrado('Adjunto');
+    reply.header('content-disposition', `attachment; filename="${String(a.nombre).replace(/[^\w.-]/g, '_')}"`);
+    return reply.type(a.tipo === 'application/pdf' ? 'application/pdf' : 'application/octet-stream').send(Buffer.from(a.base64, 'base64'));
+  });
+
   // ---- Plataforma (superadmin): alta de organizadores ----
   app.get('/api/plataforma/organizadores', async (req) => {
     exigirSuperadmin(ctx, req);
