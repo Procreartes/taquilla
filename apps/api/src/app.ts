@@ -13,10 +13,22 @@ import { rutasPlanos } from './modulos/planos';
 import { rutasEventos } from './modulos/eventos';
 import { rutasPublico } from './modulos/publico';
 import { rutasPagos } from './modulos/pagos';
+import { rutasPuerta } from './modulos/puerta';
+import { rutasCliente } from './modulos/cliente';
+import { registrarAdjuntador } from './servicios/trabajos';
+import { pdfEntradas } from './servicios/entradas';
 import { registrarTrabajos } from './servicios/trabajos';
 
 export type Modulo = (app: FastifyInstance, ctx: Contexto) => Promise<void>;
-const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos, rutasPublico, rutasPagos];
+const MODULOS: Modulo[] = [rutasAuth, rutasEntra, rutasOrganizadores, rutasPlanos, rutasEventos, rutasPublico, rutasPagos, rutasPuerta, rutasCliente];
+
+// El correo de confirmación lleva las entradas en PDF
+let pdfRegistrado = false;
+function registrarPdf() {
+  if (pdfRegistrado) return;
+  pdfRegistrado = true;
+  registrarAdjuntador(async (ctx, p) => [{ nombre: `entradas-${p.codigo}.pdf`, tipo: 'application/pdf', contenido: await pdfEntradas(ctx, p) }]);
+}
 
 export async function construirApp(ctx: Contexto, opciones: { registro?: boolean } = {}) {
   const app = Fastify({
@@ -64,6 +76,7 @@ export async function construirApp(ctx: Contexto, opciones: { registro?: boolean
   app.get('/api/salud', async () => ({ ok: true, modoDemo: ctx.config.modoDemo, db: ctx.db.tipo }));
 
   for (const m of MODULOS) await m(app, ctx);
+  registrarPdf();
   registrarTrabajos(ctx);
   return app;
 }

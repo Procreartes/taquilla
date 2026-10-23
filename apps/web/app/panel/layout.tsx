@@ -10,6 +10,7 @@ const ENLACES: { href: string; texto: string; permiso?: string }[] = [
   { href: '/panel/recintos', texto: 'Recintos y planos', permiso: 'recintos.ver' },
   { href: '/panel/organizador', texto: 'Organizador', permiso: 'organizador.editar' },
   { href: '/panel/equipo', texto: 'Equipo', permiso: 'equipo.gestionar' },
+  { href: '/puerta', texto: 'Puerta', permiso: 'puerta.validar' },
   { href: '/panel/correos', texto: 'Correos de prueba', permiso: 'correos.ver' },
   { href: '/panel/auditoria', texto: 'Auditoría', permiso: 'auditoria.ver' },
 ];

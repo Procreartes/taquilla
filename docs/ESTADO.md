@@ -10,7 +10,7 @@
 | 2 · Planos | ✅ Terminada |
 | 3 · Eventos y funciones | ✅ Terminada |
 | 4 · Compra | ✅ Terminada |
-| 5 · Entradas y puerta | ⏳ Pendiente |
+| 5 · Entradas y puerta | ✅ Terminada |
 | 6 · Panel y dinero | ⏳ Pendiente |
 | 7 · Seguridad y carga | ⏳ Pendiente |
 | 8 · Integraciones y acabado | ⏳ Pendiente |
@@ -109,6 +109,25 @@
 4. Rellena nombre y correo (inventados), marca las dos casillas obligatorias y pulsa **Pagar**.
 5. En la página de pago simulado deja la tarjeta 4242 4242 4242 4242 y pulsa **Pagar**.
 6. Verás tus entradas y la factura. En el panel (**Entrar** → «Gerencia ASOMBRA») → **Correos de prueba** está el correo que habría recibido la persona.
+
+## Fase 5 · Entradas y puerta
+
+**Terminado**
+- Entrada en el móvil con QR rotatorio firmado (cambia cada 15 s) y PDF con QR estático firmado (adjunto en el correo y descargable).
+- «Mis entradas»: cuenta del cliente con enlace por correo, sin contraseña.
+- App de puerta (PWA) por función: descarga las entradas, lee con la cámara o a mano, funciona sin conexión y sincroniza al volver. Varios dispositivos a la vez sin dobles entradas (en línea). Mensajes claros: adelante, ya usada (con hora), QR caducado, de otra función (y cuál), anulada, manipulada.
+- Aforo dentro en tiempo real.
+
+**Preparado, sin activar**
+- Apple Wallet y Google Wallet (faltan certificados, ver `docs/ENTRADAS.md`).
+
+**Cómo probarlo**
+1. Haz una compra de prueba (fase 4). En la página final verás los QR moviéndose (la barra azul marca los 15 s).
+2. Pulsa **Descargar PDF**: cada entrada en una página con su QR.
+3. En otra pestaña (o en el móvil, en la misma red) abre `http://localhost:3000/puerta`, entra como «Puerta ASOMBRA (prueba)» y elige la función de prueba de Antigua.
+4. Escribe el código de una entrada (`TKT-…`, aparece debajo del QR) y pulsa **Validar**: «Adelante». Vuelve a validarla: «Ya utilizada» con la hora.
+5. Sin conexión: con la función elegida, desactiva la red del ordenador y valida otra entrada: dice «Validado sin conexión». Vuelve a activar la red: en unos segundos se sincroniza sola.
+6. **Mis entradas** (arriba a la derecha en la web): escribe el correo con el que compraste; el enlace llega a **Correos de prueba** del panel.
 
 ## Para Naroe
 

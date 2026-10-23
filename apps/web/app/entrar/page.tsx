@@ -3,6 +3,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
+/** Solo se vuelve a rutas de esta misma web. */
+function destino() {
+  const v = new URLSearchParams(window.location.search).get('volver') ?? '';
+  return /^\/(panel|puerta)(\/|$)/.test(v) ? v : '/panel';
+}
+
 const ERRORES: Record<string, string> = {
   entra_no_configurado: 'El acceso con Microsoft 365 no está configurado todavía.',
   entra_estado: 'La sesión con Microsoft caducó. Vuelve a intentarlo.',
@@ -29,7 +35,7 @@ export default function Entrar() {
     const err = new URLSearchParams(window.location.search).get('error');
     if (err) setError(ERRORES[err] ?? 'No se pudo entrar.');
     api('/api/auth/yo').then((y) => {
-      if (y.sesion && y.completa) router.replace('/panel');
+      if (y.sesion && y.completa) router.replace(destino());
       else if (y.sesion) setPaso('2fa');
     }).catch(() => {});
   }, [router]);
@@ -42,10 +48,10 @@ export default function Entrar() {
       if (paso === 'clave') {
         const r = await api('/api/auth/entrar', { cuerpo: { email, clave } });
         if (r.necesita2fa && !r.configurar2fa) setPaso('2fa');
-        else router.push(r.configurar2fa ? '/panel/seguridad' : '/panel');
+        else router.push(r.configurar2fa ? '/panel/seguridad' : destino());
       } else {
         await api('/api/auth/2fa', { cuerpo: { codigo } });
-        router.push('/panel');
+        router.push(destino());
       }
     } catch (err: any) {
       setError(err.message);
@@ -58,7 +64,7 @@ export default function Entrar() {
     setError('');
     try {
       await api('/api/auth/demo', { cuerpo: { email: em } });
-      router.push('/panel');
+      router.push(destino());
     } catch (err: any) {
       setError(err.message);
     }
