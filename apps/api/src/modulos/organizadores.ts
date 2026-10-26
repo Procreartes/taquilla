@@ -33,6 +33,17 @@ const CAMPOS_PUBLICOS = `id, slug, nombre, razon_social, cif, direccion_fiscal, 
   color_primario, color_secundario, stripe_cuenta_id, stripe_estado, impuesto_nombre, impuesto_tipo,
   impuesto_pendiente, gastos_gestion_cent, gastos_gestion_pct, max_entradas_pedido, textos_legales, es_prueba, creado_en`;
 
+/** Instrucciones para quien controla el acceso con la app de puerta (se añaden a su invitación). */
+export const instruccionesPuertaTexto = (url: string) => `Cómo validar las entradas el día del evento:
+1. Antes del evento, define tu contraseña con el enlace de arriba y activa la verificación en dos pasos.
+2. El día del evento abre en el móvil ${url}/puerta y entra con tu correo y tu contraseña.
+3. Elige la función y, con buena cobertura, pulsa «Actualizar lista»: así podrás validar aunque luego se corte la conexión.
+4. Pulsa «Leer con la cámara» (acepta el permiso) y apunta al QR de cada entrada: en verde puede pasar; en rojo, no (ya usada, anulada o de otra función).
+5. Si un QR no se lee, escribe el código TKT-… que aparece bajo el QR y pulsa «Validar».
+Consejo: añade la página a la pantalla de inicio del móvil para abrirla como una app. Lo validado sin conexión se sincroniza solo al volver la cobertura.`;
+const instruccionesPuertaHtml = (url: string) =>
+  `<h3>Cómo validar las entradas el día del evento</h3><ol>${instruccionesPuertaTexto(url).split('\n').slice(1, 6).map((l) => `<li>${l.replace(/^\d\.\s*/, '').replace(/[<>&]/g, '')}</li>`).join('')}</ol><p>${instruccionesPuertaTexto(url).split('\n')[6].replace(/[<>&]/g, '')}</p>`;
+
 export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
   app.get('/api/organizador', async (req) => {
     const c = exigir(ctx, req, 'eventos.ver');
@@ -89,8 +100,8 @@ export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
       const enlace = r.token ? `${ctx.config.URL_PUBLICA}/entrar/definir?t=${r.token}` : `${ctx.config.URL_PUBLICA}/entrar`;
       await ctx.correos.enviar({
         organizadorId: c.organizadorId, para: r.email, asunto: `Te han dado acceso a Taquilla · ${org!.nombre}`,
-        html: `<p>Hola ${r.nombre.replace(/[<>&]/g, '')}:</p><p>Ya tienes acceso al panel de <b>${org!.nombre.replace(/[<>&]/g, '')}</b>.</p><p><a href="${enlace}">${r.token ? 'Define tu contraseña' : 'Entrar al panel'}</a>${r.token ? ' (el enlace caduca en 7 días)' : ''}.</p><p>Si tu organización usa Microsoft 365, también puedes entrar con tu cuenta de Microsoft.</p>`,
-        texto: `Ya tienes acceso al panel de ${org!.nombre}. ${r.token ? 'Define tu contraseña' : 'Entra'} aquí: ${enlace}`,
+        html: `<p>Hola ${r.nombre.replace(/[<>&]/g, '')}:</p><p>Ya tienes acceso al panel de <b>${org!.nombre.replace(/[<>&]/g, '')}</b>.</p><p><a href="${enlace}">${r.token ? 'Define tu contraseña' : 'Entrar al panel'}</a>${r.token ? ' (el enlace caduca en 7 días)' : ''}.</p><p>Si tu organización usa Microsoft 365, también puedes entrar con tu cuenta de Microsoft.</p>${r.rol === 'puerta' ? instruccionesPuertaHtml(ctx.config.URL_PUBLICA) : ''}`,
+        texto: `Ya tienes acceso al panel de ${org!.nombre}. ${r.token ? 'Define tu contraseña' : 'Entra'} aquí: ${enlace}${r.rol === 'puerta' ? `\n\n${instruccionesPuertaTexto(ctx.config.URL_PUBLICA)}` : ''}`,
       });
       const { token: _t, ...publico } = r;
       return publico;

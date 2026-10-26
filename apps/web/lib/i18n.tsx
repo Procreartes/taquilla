@@ -8,6 +8,9 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const es = {
   idioma: 'Idioma',
   cartelera: 'Cartelera',
+  heroTitulo: 'Lo mejor se vive en directo', heroSub: 'Entradas para conciertos, festivales y espectáculos en Canarias. Elige tu butaca y llévate la entrada en el móvil.',
+  heroEventos: 'Descubrir eventos', heroAgenda: 'Ver la agenda',
+  heroMusica: 'Música en vivo', heroMusicaTxt: 'Conciertos y directos', heroFestivales: 'Festivales', heroFestivalesTxt: 'Varios días, varias islas', heroEspectaculos: 'Espectáculos', heroEspectaculosTxt: 'Magia, humor y teatro',
   todas: 'Todas',
   filtrarIsla: 'Filtrar por isla',
   proximamente: 'Próximamente',
@@ -100,7 +103,7 @@ export type Clave = keyof typeof es;
 type Diccionario = Record<Clave, string>;
 
 const en: Diccionario = {
-  idioma: 'Language', cartelera: "What's on", todas: 'All', filtrarIsla: 'Filter by island', proximamente: 'Coming soon', comprar: 'Buy',
+  idioma: 'Language', cartelera: "What's on", heroTitulo: 'The best is live', heroSub: 'Tickets for concerts, festivals and shows in the Canary Islands. Pick your seat and keep your ticket on your phone.', heroEventos: 'Discover events', heroAgenda: 'See the programme', heroMusica: 'Live music', heroMusicaTxt: 'Concerts and gigs', heroFestivales: 'Festivals', heroFestivalesTxt: 'Several days, several islands', heroEspectaculos: 'Shows', heroEspectaculosTxt: 'Magic, comedy and theatre', todas: 'All', filtrarIsla: 'Filter by island', proximamente: 'Coming soon', comprar: 'Buy',
   comprarEntradas: 'Buy tickets', desde: 'From', gratis: 'Free entry', gratisDetalle: 'Free entry while space lasts. No ticket needed.',
   precioPorConfirmar: 'Price to be confirmed', entradasProximamente: 'Tickets coming soon', ventaOficial: 'Official sale at Entradas Canarias',
   agotado: 'Sold out', noALaVenta: 'Not on sale', pausada: 'Sales paused', cancelada: 'Cancelled', horaPorConfirmar: 'Time to be confirmed',
@@ -124,7 +127,7 @@ const en: Diccionario = {
 };
 
 const de: Diccionario = {
-  idioma: 'Sprache', cartelera: 'Programm', todas: 'Alle', filtrarIsla: 'Nach Insel filtern', proximamente: 'Demnächst', comprar: 'Kaufen',
+  idioma: 'Sprache', cartelera: 'Programm', heroTitulo: 'Live ist am schönsten', heroSub: 'Tickets für Konzerte, Festivals und Shows auf den Kanarischen Inseln. Platz wählen, Ticket aufs Handy.', heroEventos: 'Events entdecken', heroAgenda: 'Zum Programm', heroMusica: 'Live-Musik', heroMusicaTxt: 'Konzerte und Auftritte', heroFestivales: 'Festivals', heroFestivalesTxt: 'Mehrere Tage, mehrere Inseln', heroEspectaculos: 'Shows', heroEspectaculosTxt: 'Magie, Comedy und Theater', todas: 'Alle', filtrarIsla: 'Nach Insel filtern', proximamente: 'Demnächst', comprar: 'Kaufen',
   comprarEntradas: 'Tickets kaufen', desde: 'Ab', gratis: 'Eintritt frei', gratisDetalle: 'Freier Eintritt, solange Plätze frei sind. Kein Ticket nötig.',
   precioPorConfirmar: 'Preis wird noch bestätigt', entradasProximamente: 'Tickets demnächst', ventaOficial: 'Offizieller Verkauf bei Entradas Canarias',
   agotado: 'Ausverkauft', noALaVenta: 'Nicht im Verkauf', pausada: 'Verkauf pausiert', cancelada: 'Abgesagt', horaPorConfirmar: 'Uhrzeit wird noch bestätigt',
