@@ -25,7 +25,13 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
   app.get('/api/publico/legal/:doc', async (req) => {
     const { doc } = z.object({ doc: z.enum(DOCUMENTOS_LEGALES) }).parse(req.params);
     const { org, idioma } = z.object({ org: z.string().max(60).optional(), idioma: z.enum(['es', 'en', 'de']).default('es') }).parse(req.query);
-    const o = org ? await ctx.db.one<any>('select nombre, razon_social, cif, direccion_fiscal, email_contacto, textos_legales from organizadores where slug = $1 and activo', [org]) : null;
+    const campos = 'nombre, razon_social, cif, direccion_fiscal, email_contacto, textos_legales';
+    let o = org ? await ctx.db.one<any>(`select ${campos} from organizadores where slug = $1 and activo`, [org]) : null;
+    if (!o) {
+      // Sin organizador indicado: si solo hay uno real (sin contar los de prueba), sus datos son los de la web.
+      const reales = await ctx.db.query<any>(`select ${campos} from organizadores where activo and not es_prueba limit 2`);
+      if (reales.length === 1) o = reales[0];
+    }
     const propio = o?.textos_legales?.[idioma]?.[doc] ?? o?.textos_legales?.es?.[doc];
     return { borrador: !propio, texto: propio ?? plantillaLegal(doc, o ?? undefined) };
   });
@@ -63,7 +69,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     const { id } = z.object({ id: uuid }).parse(req.params);
     const f = await ctx.db.one<any>(
       `select ${CAMPOS_FUNCION_PUBLICA}, f.version_plano_id, f.vendidas_general, e.slug as evento_slug, e.nombre as evento_nombre, e.datos->'islas' as islas,
-              o.nombre as organizador_nombre, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales,
+              o.nombre as organizador_nombre, o.slug as organizador_slug, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales,
               v.receta as plano
          from funciones f join recintos r on r.id = f.recinto_id join eventos e on e.id = f.evento_id and e.publicado
          join organizadores o on o.id = f.organizador_id left join versiones_plano v on v.id = f.version_plano_id

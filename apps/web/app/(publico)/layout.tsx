@@ -27,7 +27,7 @@ function Pie() {
         <Link href="/legal/condiciones">{t('condiciones')}</Link>
         <Link href="/legal/cookies">{t('cookies')}</Link>
       </nav>
-      <p style={{ marginTop: 10 }}>Taquilla · Grupo Livon · ProCreArtes — entorno de pruebas</p>
+      <p style={{ marginTop: 10 }}>Taquilla · Grupo Livon</p>
     </footer>
   );
 }
