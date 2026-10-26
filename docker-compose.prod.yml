@@ -1,0 +1,130 @@
+# Taquilla · PRODUCCIÓN (Coolify). El de tu ordenador sigue siendo docker-compose.yml.
+#
+# Coolify genera solo los valores SERVICE_PASSWORD_* la primera vez (secretos largos y aleatorios)
+# y los guarda en «Environment Variables». No hace falta escribirlos a mano ni subirlos al repositorio.
+#
+# Variables que hay que poner a mano en Coolify (Environment Variables):
+#   URL_PUBLICA              https://entradas.grupolivon.com
+#   SMTP_URL                 smtp://smtp.office365.com:587
+#   SMTP_USUARIO / SMTP_CLAVE  buzón de Microsoft 365 que envía las entradas
+#   CORREO_REMITENTE         Entradas <entradas@…>
+#   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET
+#   COBRO_REAL               true (solo cuando las claves de Stripe sean las reales)
+#   TURNSTILE_SITE_KEY, TURNSTILE_SECRET (opcional, recomendado)
+name: taquilla
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taquilla
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_DB: taquilla
+    volumes:
+      # Volumen nuevo: la base de datos de producción empieza limpia, sin los datos de prueba.
+      - pgproduccion:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taquilla"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisproduccion:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "true"
+      EXIGIR_2FA: ${EXIGIR_2FA:-true}
+      DATABASE_URL: postgres://taquilla:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/taquilla
+      REDIS_URL: redis://redis:6379
+      URL_PUBLICA: ${URL_PUBLICA:-https://entradas.grupolivon.com}
+      SECRETO_SESION: ${SERVICE_PASSWORD_64_SESION}
+      SECRETO_QR: ${SERVICE_PASSWORD_64_QR}
+      SECRETO_DATOS: ${SERVICE_PASSWORD_64_DATOS}
+      SECRETO_PUERTA: ${SERVICE_PASSWORD_64_PUERTA}
+      SECRETO_COLA: ${SERVICE_PASSWORD_64_COLA}
+      SMTP_URL: ${SMTP_URL:-}
+      SMTP_USUARIO: ${SMTP_USUARIO:-}
+      SMTP_CLAVE: ${SMTP_CLAVE:-}
+      CORREO_REMITENTE: ${CORREO_REMITENTE:-Entradas <no-responder@grupolivon.com>}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_CONNECT_WEBHOOK_SECRET: ${STRIPE_CONNECT_WEBHOOK_SECRET:-}
+      COBRO_REAL: ${COBRO_REAL:-false}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+      ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
+      ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
+      RESERVA_MINUTOS: ${RESERVA_MINUTOS:-10}
+      COLA_VIRTUAL_ACTIVA: ${COLA_VIRTUAL_ACTIVA:-false}
+      HOST: 0.0.0.0
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  trabajador:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    command: ["npm", "run", "trabajador", "-w", "@taquilla/api"]
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "true"
+      EXIGIR_2FA: ${EXIGIR_2FA:-true}
+      DATABASE_URL: postgres://taquilla:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/taquilla
+      REDIS_URL: redis://redis:6379
+      URL_PUBLICA: ${URL_PUBLICA:-https://entradas.grupolivon.com}
+      SECRETO_SESION: ${SERVICE_PASSWORD_64_SESION}
+      SECRETO_QR: ${SERVICE_PASSWORD_64_QR}
+      SECRETO_DATOS: ${SERVICE_PASSWORD_64_DATOS}
+      SECRETO_PUERTA: ${SERVICE_PASSWORD_64_PUERTA}
+      SECRETO_COLA: ${SERVICE_PASSWORD_64_COLA}
+      SMTP_URL: ${SMTP_URL:-}
+      SMTP_USUARIO: ${SMTP_USUARIO:-}
+      SMTP_CLAVE: ${SMTP_CLAVE:-}
+      CORREO_REMITENTE: ${CORREO_REMITENTE:-Entradas <no-responder@grupolivon.com>}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_CONNECT_WEBHOOK_SECRET: ${STRIPE_CONNECT_WEBHOOK_SECRET:-}
+      COBRO_REAL: ${COBRO_REAL:-false}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+      ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
+      ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
+      RESERVA_MINUTOS: ${RESERVA_MINUTOS:-10}
+      COLA_VIRTUAL_ACTIVA: ${COLA_VIRTUAL_ACTIVA:-false}
+    depends_on:
+      api: { condition: service_started }
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:4000
+    expose:
+      - "3000"
+    depends_on:
+      - api
+
+volumes:
+  pgproduccion:
+  redisproduccion:

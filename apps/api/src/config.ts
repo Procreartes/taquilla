@@ -39,12 +39,15 @@ const Esquema = z.object({
   EXIGIR_2FA: z.preprocess((v) => v === 'true' || v === '1', z.boolean()).default(false),
   MODO_DEMO: z.preprocess((v) => (v === undefined ? undefined : v === 'true' || v === '1'), z.boolean().optional()),
   CLAVE_USUARIOS_PRUEBA: opcional,
-  // Stripe (solo modo prueba)
+  // Stripe. Las claves reales (sk_live_) solo se aceptan con COBRO_REAL=true y en producción.
+  COBRO_REAL: z.preprocess((v) => v === 'true' || v === '1', z.boolean()).default(false),
   STRIPE_SECRET_KEY: opcional,
   STRIPE_WEBHOOK_SECRET: opcional,
   STRIPE_CONNECT_WEBHOOK_SECRET: opcional,
   // Correo
   SMTP_URL: opcional,
+  SMTP_USUARIO: opcional,
+  SMTP_CLAVE: opcional,
   CORREO_REMITENTE: z.string().default('Taquilla <no-responder@taquilla.test>'),
   // Turnstile (Cloudflare)
   TURNSTILE_SECRET: opcional,
@@ -62,6 +65,8 @@ const Esquema = z.object({
   COLA_PASES_POR_MINUTO: z.coerce.number().default(300),
 });
 
+export const esClaveStripePrueba = (k: string) => k.startsWith('sk_test_') || k.startsWith('rk_test_');
+
 export type Config = z.infer<typeof Esquema> & { modoDemo: boolean; raiz: string };
 
 export function leerConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -74,8 +79,12 @@ export function leerConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!c.DATABASE_URL) throw new Error('Falta DATABASE_URL en producción');
     if (modoDemo) throw new Error('MODO_DEMO no se puede activar en producción');
   }
-  if (c.STRIPE_SECRET_KEY && !c.STRIPE_SECRET_KEY.startsWith('sk_test_') && !c.STRIPE_SECRET_KEY.startsWith('rk_test_')) {
-    throw new Error('Solo se admiten claves de Stripe en modo prueba (sk_test_…). Esta plataforma aún no cobra de verdad.');
+  if (c.STRIPE_SECRET_KEY && !esClaveStripePrueba(c.STRIPE_SECRET_KEY)) {
+    if (!c.COBRO_REAL) throw new Error('Clave real de Stripe sin COBRO_REAL=true: no se arranca para no cobrar por error.');
+    if (c.NODE_ENV !== 'production') throw new Error('Las claves reales de Stripe solo se usan con NODE_ENV=production.');
+  }
+  if (c.COBRO_REAL && (!c.STRIPE_SECRET_KEY || esClaveStripePrueba(c.STRIPE_SECRET_KEY))) {
+    throw new Error('COBRO_REAL=true necesita una clave real de Stripe (sk_live_… o rk_live_…).');
   }
   return { ...c, modoDemo, raiz: RAIZ };
 }

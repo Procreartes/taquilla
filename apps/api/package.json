@@ -8,6 +8,7 @@
     "start": "tsx src/servidor.ts",
     "migrar": "tsx src/cli/migrar.ts",
     "semilla": "tsx src/cli/semilla.ts",
+    "crear-admin": "tsx src/cli/crear-admin.ts",
     "trabajador": "tsx src/cli/trabajador.ts"
   },
   "dependencies": {

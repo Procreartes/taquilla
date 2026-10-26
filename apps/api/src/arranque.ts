@@ -18,7 +18,7 @@ export async function abrirDb(config: Config): Promise<Db> {
 export async function crearPasarela(config: Config): Promise<PasarelaPago> {
   if (config.STRIPE_SECRET_KEY) {
     const secretos = [config.STRIPE_WEBHOOK_SECRET, config.STRIPE_CONNECT_WEBHOOK_SECRET].filter((s): s is string => !!s);
-    return crearPasarelaStripe(config.STRIPE_SECRET_KEY, secretos);
+    return crearPasarelaStripe(config.STRIPE_SECRET_KEY, secretos, config.COBRO_REAL);
   }
   return crearPasarelaSimulada(config.SECRETO_SESION + ':pasarela-simulada', config.URL_PUBLICA);
 }
@@ -42,7 +42,7 @@ export async function crearContexto(config?: Config, opciones: { db?: Db } = {})
     redis,
     almacen: redis ? new RedisAlmacen(redis) : new MemoriaAlmacen(),
     colas: config.REDIS_URL ? new ColasBullMQ(config.REDIS_URL) : new ColasEnProceso(),
-    correos: await crearCorreos(db, { smtpUrl: config.SMTP_URL, remitente: config.CORREO_REMITENTE, guardarAdjuntos: config.NODE_ENV !== 'production' }),
+    correos: await crearCorreos(db, { smtpUrl: config.SMTP_URL, smtpUsuario: config.SMTP_USUARIO, smtpClave: config.SMTP_CLAVE, remitente: config.CORREO_REMITENTE, guardarAdjuntos: config.NODE_ENV !== 'production' }),
     pasarela: await crearPasarela(config),
   };
 }
