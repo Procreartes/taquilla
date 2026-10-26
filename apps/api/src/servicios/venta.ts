@@ -225,7 +225,8 @@ export async function prepararPago(ctx: Contexto, token: string, d: DatosComprad
     email: d.email, idioma: d.idioma, caducaEn,
     lineas: [
       ...agrupar(lineas.map((l) => ({ descripcion: `${p.titulo} · ${l.zona_nombre}`, precio: l.precio_cent }))),
-      ...(gastos ? [{ descripcion: 'Gastos de gestión', cantidad: lineas.length, importeUnitarioCent: lineas[0].gastos_cent }] : []),
+      // Un solo concepto con la suma: con gastos en porcentaje cada entrada puede llevar un importe distinto.
+      ...(gastos ? [{ descripcion: `Gastos de gestión (${lineas.length} ${lineas.length === 1 ? 'entrada' : 'entradas'})`, cantidad: 1, importeUnitarioCent: gastos }] : []),
     ],
     urlOk: `${urlBase}/pedido/${token}?pago=ok`,
     urlCancelar: `${urlBase}/pedido/${token}?pago=cancelado`,
