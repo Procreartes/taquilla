@@ -5,8 +5,9 @@
 #
 # Variables que hay que poner a mano en Coolify (Environment Variables):
 #   URL_PUBLICA              https://entradas.grupolivon.com
-#   SMTP_URL                 smtp://smtp.office365.com:587
-#   SMTP_USUARIO / SMTP_CLAVE  buzón de Microsoft 365 que envía las entradas
+#   CORREO_GRAPH_TENANT_ID / _CLIENT_ID / _CLIENT_SECRET  app de Entra ID con permiso Mail.Send
+#   CORREO_GRAPH_BUZON       entradas@dislateproducciones.com (buzón compartido, sin contraseña)
+#   (alternativa: SMTP_URL + SMTP_USUARIO + SMTP_CLAVE)
 #   CORREO_REMITENTE         Entradas <entradas@…>
 #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET
 #   COBRO_REAL               true (solo cuando las claves de Stripe sean las reales)
@@ -60,6 +61,10 @@ services:
       SMTP_URL: ${SMTP_URL:-}
       SMTP_USUARIO: ${SMTP_USUARIO:-}
       SMTP_CLAVE: ${SMTP_CLAVE:-}
+      CORREO_GRAPH_TENANT_ID: ${CORREO_GRAPH_TENANT_ID:-}
+      CORREO_GRAPH_CLIENT_ID: ${CORREO_GRAPH_CLIENT_ID:-}
+      CORREO_GRAPH_CLIENT_SECRET: ${CORREO_GRAPH_CLIENT_SECRET:-}
+      CORREO_GRAPH_BUZON: ${CORREO_GRAPH_BUZON:-}
       CORREO_REMITENTE: ${CORREO_REMITENTE:-Entradas <no-responder@grupolivon.com>}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
@@ -98,6 +103,10 @@ services:
       SMTP_URL: ${SMTP_URL:-}
       SMTP_USUARIO: ${SMTP_USUARIO:-}
       SMTP_CLAVE: ${SMTP_CLAVE:-}
+      CORREO_GRAPH_TENANT_ID: ${CORREO_GRAPH_TENANT_ID:-}
+      CORREO_GRAPH_CLIENT_ID: ${CORREO_GRAPH_CLIENT_ID:-}
+      CORREO_GRAPH_CLIENT_SECRET: ${CORREO_GRAPH_CLIENT_SECRET:-}
+      CORREO_GRAPH_BUZON: ${CORREO_GRAPH_BUZON:-}
       CORREO_REMITENTE: ${CORREO_REMITENTE:-Entradas <no-responder@grupolivon.com>}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}

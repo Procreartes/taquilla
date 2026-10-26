@@ -42,7 +42,10 @@ export async function crearContexto(config?: Config, opciones: { db?: Db } = {})
     redis,
     almacen: redis ? new RedisAlmacen(redis) : new MemoriaAlmacen(),
     colas: config.REDIS_URL ? new ColasBullMQ(config.REDIS_URL) : new ColasEnProceso(),
-    correos: await crearCorreos(db, { smtpUrl: config.SMTP_URL, smtpUsuario: config.SMTP_USUARIO, smtpClave: config.SMTP_CLAVE, remitente: config.CORREO_REMITENTE, guardarAdjuntos: config.NODE_ENV !== 'production' }),
+    correos: await crearCorreos(db, { graph: config.CORREO_GRAPH_TENANT_ID && config.CORREO_GRAPH_CLIENT_ID && config.CORREO_GRAPH_CLIENT_SECRET && config.CORREO_GRAPH_BUZON
+      ? { tenantId: config.CORREO_GRAPH_TENANT_ID, clientId: config.CORREO_GRAPH_CLIENT_ID, clientSecret: config.CORREO_GRAPH_CLIENT_SECRET, buzon: config.CORREO_GRAPH_BUZON }
+      : null,
+    smtpUrl: config.SMTP_URL, smtpUsuario: config.SMTP_USUARIO, smtpClave: config.SMTP_CLAVE, remitente: config.CORREO_REMITENTE, guardarAdjuntos: config.NODE_ENV !== 'production' }),
     pasarela: await crearPasarela(config),
   };
 }
