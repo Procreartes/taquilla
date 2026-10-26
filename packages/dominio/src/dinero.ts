@@ -12,6 +12,16 @@ export function desgloseImpuesto(totalCent: number, tipoPct: number) {
   return { base, cuota: totalCent - base, total: totalCent };
 }
 
+/**
+ * Gastos de gestión de una entrada. Con porcentaje: ese % del precio (redondeado al céntimo),
+ * así que una entrada gratuita no paga gastos. Sin porcentaje: el importe fijo por entrada.
+ */
+export function gastosPorEntrada(precioCent: number, o: { gastos_gestion_cent: number; gastos_gestion_pct?: number | string | null }): number {
+  const pct = o.gastos_gestion_pct === null || o.gastos_gestion_pct === undefined || o.gastos_gestion_pct === '' ? null : Number(o.gastos_gestion_pct);
+  if (pct !== null && Number.isFinite(pct)) return Math.round((precioCent * pct) / 100);
+  return precioCent > 0 ? o.gastos_gestion_cent : 0;
+}
+
 export function euros(cent: number): string {
   return (cent / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }

@@ -24,13 +24,14 @@ export const DatosOrganizador = z.object({
   impuesto_tipo: z.number().min(0).max(99).optional(),
   impuesto_pendiente: z.boolean().optional(),
   gastos_gestion_cent: z.number().int().min(0).max(10_000).optional(),
+  gastos_gestion_pct: z.number().min(0).max(50).nullable().optional(),
   max_entradas_pedido: z.number().int().min(1).max(50).optional(),
   textos_legales: TEXTOS_LEGALES.optional(),
 });
 
 const CAMPOS_PUBLICOS = `id, slug, nombre, razon_social, cif, direccion_fiscal, email_contacto, telefono, logo_url,
   color_primario, color_secundario, stripe_cuenta_id, stripe_estado, impuesto_nombre, impuesto_tipo,
-  impuesto_pendiente, gastos_gestion_cent, max_entradas_pedido, textos_legales, es_prueba, creado_en`;
+  impuesto_pendiente, gastos_gestion_cent, gastos_gestion_pct, max_entradas_pedido, textos_legales, es_prueba, creado_en`;
 
 export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
   app.get('/api/organizador', async (req) => {

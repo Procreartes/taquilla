@@ -5,7 +5,7 @@
  */
 import Link from 'next/link';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
-import { generar, type Asiento } from '@taquilla/dominio';
+import { gastosPorEntrada, generar, type Asiento } from '@taquilla/dominio';
 import PlanoSvg, { type EstadoButaca } from '@/componentes/PlanoSvg';
 import { api, eur, fechaLarga } from '@/lib/api';
 import { useT } from '@/lib/i18n';
@@ -54,11 +54,13 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
   if (!f) return <p role="status">{t('cargando')}</p>;
 
   const max = f.max_entradas_pedido as number;
-  const gastos = f.gastos_gestion_cent as number;
+  const pctGastos = f.gastos_gestion_pct === null || f.gastos_gestion_pct === undefined ? null : Number(f.gastos_gestion_pct);
   const accion = accionFuncion(f);
   const color = (f.islas ?? []).find((i: any) => i.id === f.isla)?.colores?.acento ?? 'var(--accent)';
   const n = f.modo_venta === 'numerada' ? sel.length : cantidad;
-  const importe = f.modo_venta === 'numerada' ? sel.reduce((s, c) => s + (precioZona[porCodigo.get(c)?.zona ?? ''] ?? 0), 0) : cantidad * (precioZona.general ?? 0);
+  const preciosSel = f.modo_venta === 'numerada' ? sel.map((c) => precioZona[porCodigo.get(c)?.zona ?? ''] ?? 0) : Array.from({ length: cantidad }, () => precioZona.general ?? 0);
+  const importe = preciosSel.reduce((s, p) => s + p, 0);
+  const gastosTotal = preciosSel.reduce((s, p) => s + gastosPorEntrada(p, f), 0);
 
   const estado = (c: string): EstadoButaca => (ocupadas.has(c) ? 'vendida' : reservadas.has(c) ? 'reservada' : 'libre');
   const alternar = (a: Asiento) => {
@@ -194,13 +196,13 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
                       })}
                     </ul>
                   )}
-                  <Totales importe={importe} n={n} gastos={gastos} f={f} />
+                  <Totales importe={importe} n={n} gastosTotal={gastosTotal} f={f} />
                   {!f.cola && <Turnstile clave={f.turnstile} onToken={setAntibots} idioma={idioma} />}
                   <button className="btn acento ancho" disabled={ocupado || !n || (!!f.turnstile && !f.cola && !antibots)} onClick={() => reservar(f.modo_venta === 'numerada' ? { butacas: sel } : { cantidad })}>{t('continuar')}</button>
                   {f.modo_venta === 'numerada' && <button className="btn sec sm" onClick={() => setSel([])}>{t('vaciar')}</button>}
                 </>
               )}
-              <p className="small muted">{t('maxEntradas', { n: max })} · {t('gastosGestion')}: {t('porEntrada', { x: eur(gastos) })}</p>
+              <p className="small muted">{t('maxEntradas', { n: max })} · {t('gastosGestion')}: {pctGastos !== null ? t('porcentajePrecio', { x: String(pctGastos).replace('.', ',') }) : t('porEntrada', { x: eur(f.gastos_gestion_cent) })}</p>
               {aviso && <p className="aviso warn" role="alert">{aviso}</p>}
             </aside>
           </div>
@@ -211,15 +213,15 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
   );
 }
 
-function Totales({ importe, n, gastos, f }: { importe: number; n: number; gastos: number; f: any }) {
+function Totales({ importe, n, gastosTotal, f }: { importe: number; n: number; gastosTotal: number; f: any }) {
   const { t } = useT();
-  const total = importe + n * gastos;
+  const total = importe + gastosTotal;
   const tipo = Number(f.impuesto_tipo);
   const cuota = total - Math.round(total / (1 + tipo / 100));
   return (
     <dl className="stack small" style={{ gap: 4, margin: 0 }}>
       <div className="fila" style={{ justifyContent: 'space-between' }}><dt>{n} ×</dt><dd style={{ margin: 0 }}>{eur(importe)}</dd></div>
-      <div className="fila" style={{ justifyContent: 'space-between' }}><dt>{t('gastosGestion')}</dt><dd style={{ margin: 0 }}>{eur(n * gastos)}</dd></div>
+      <div className="fila" style={{ justifyContent: 'space-between' }}><dt>{t('gastosGestion')}</dt><dd style={{ margin: 0 }}>{eur(gastosTotal)}</dd></div>
       <div className="fila" style={{ justifyContent: 'space-between', fontSize: 18, fontWeight: 800 }}><dt>{t('total')}</dt><dd style={{ margin: 0 }}>{eur(total)}</dd></div>
       <div className="fila muted" style={{ justifyContent: 'space-between' }}><dt>{t('impuestoIncluido', { imp: f.impuesto_nombre, t: tipo })}</dt><dd style={{ margin: 0 }}>{eur(cuota)}</dd></div>
     </dl>
@@ -296,7 +298,7 @@ function Paso2({ reserva, f, onVolver }: { reserva: any; f: any; onVolver: () =>
         <p className="aviso" role="timer" aria-live="off">{t('tiempoReserva', { m: `${mm}:${ss}` })}</p>
         <h2>{t('tuSeleccion')}</h2>
         <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{reserva.lineas.map((l: any) => <li key={l.id}>{l.descripcion} · {l.zona_nombre} · {eur(l.precio_cent)}</li>)}</ul>
-        <Totales importe={reserva.importe_entradas_cent} n={reserva.lineas.length} gastos={reserva.lineas[0]?.gastos_cent ?? 0} f={f} />
+        <Totales importe={reserva.importe_entradas_cent} n={reserva.lineas.length} gastosTotal={reserva.lineas.reduce((s: number, l: any) => s + (l.gastos_cent ?? 0), 0)} f={f} />
         {error && <p className="aviso bad" role="alert">{error}</p>}
         <button className="btn acento ancho" disabled={ocupado || queda === 0}>{t('pagar', { x: eur(reserva.total_cent) })}</button>
         <button type="button" className="btn sec sm" onClick={onVolver}>{t('volver')}</button>
