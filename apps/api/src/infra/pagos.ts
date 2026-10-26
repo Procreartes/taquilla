@@ -51,6 +51,9 @@ export interface PasarelaPago {
   enlaceAlta?(o: { cuentaId: string | null; email: string | null; urlVuelta: string }): Promise<{ cuentaId: string; url: string }>;
 }
 
+/** Valor de organizadores.stripe_cuenta_id para el organizador que cobra en la propia cuenta de la plataforma. */
+export const CUENTA_PROPIA = 'propia';
+
 // ------------------------------------------------------------------------------------------------
 // Stripe Connect (cargos directos en la cuenta del organizador + application fee)
 
@@ -60,7 +63,9 @@ export async function crearPasarelaStripe(secreto: string, secretosWebhook: stri
   if (prueba && cobroReal) throw new Error('COBRO_REAL=true con una clave de prueba de Stripe');
   const Stripe = (await import('stripe')).default;
   const stripe = new Stripe(secreto);
-  const opciones = (cuenta: string | null) => (cuenta ? { stripeAccount: cuenta } : undefined);
+  // «propia»: el organizador es el dueño de la cuenta de Stripe de la plataforma y cobra en ella directamente (sin Connect).
+  const conectada = (cuenta: string | null) => !!cuenta && cuenta !== CUENTA_PROPIA;
+  const opciones = (cuenta: string | null) => (conectada(cuenta) ? { stripeAccount: cuenta! } : undefined);
   return {
     nombre: 'stripe',
     async crearSesion(s) {
@@ -72,7 +77,10 @@ export async function crearPasarelaStripe(secreto: string, secretosWebhook: stri
           client_reference_id: s.pedidoId,
           locale: (['es', 'en', 'de'].includes(s.idioma) ? s.idioma : 'es') as 'es',
           line_items: s.lineas.map((l) => ({ quantity: l.cantidad, price_data: { currency: 'eur', unit_amount: l.importeUnitarioCent, product_data: { name: l.descripcion } } })),
-          payment_intent_data: { application_fee_amount: s.comisionPlataformaCent, metadata: { pedido: s.pedidoId, codigo: s.codigoPedido } },
+          payment_intent_data: {
+            ...(conectada(s.cuentaConectada) ? { application_fee_amount: s.comisionPlataformaCent } : {}),
+            metadata: { pedido: s.pedidoId, codigo: s.codigoPedido },
+          },
           metadata: { pedido: s.pedidoId, codigo: s.codigoPedido },
           expires_at: Math.floor(s.caducaEn.getTime() / 1000),
           success_url: s.urlOk,
@@ -118,7 +126,7 @@ export async function crearPasarelaStripe(secreto: string, secretosWebhook: stri
     },
     async devolver(p) {
       const r = await stripe.refunds.create(
-        { payment_intent: p.pagoId, amount: p.importeCent, refund_application_fee: true, metadata: { motivo: p.motivo ?? '' } },
+        { payment_intent: p.pagoId, amount: p.importeCent, ...(conectada(p.cuentaConectada) ? { refund_application_fee: true } : {}), metadata: { motivo: p.motivo ?? '' } },
         { ...opciones(p.cuentaConectada), idempotencyKey: p.claveIdempotencia },
       );
       return { id: r.id };

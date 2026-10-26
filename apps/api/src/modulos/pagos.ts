@@ -4,10 +4,10 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Contexto } from '../contexto';
-import { exigir } from '../auth';
+import { exigir, exigirSuperadmin } from '../auth';
 import { auditar } from '../auditoria';
 import { ErrorHttp, conflicto, noEncontrado } from '../errores';
-import type { PasarelaSimulada } from '../infra/pagos';
+import { CUENTA_PROPIA, type PasarelaSimulada } from '../infra/pagos';
 import { caducarPedido, procesarEventoPago } from '../servicios/venta';
 
 export async function rutasPagos(app: FastifyInstance, ctx: Contexto) {
@@ -75,10 +75,25 @@ export async function rutasPagos(app: FastifyInstance, ctx: Contexto) {
     const c = exigir(ctx, req, 'organizador.editar');
     if (!ctx.pasarela.enlaceAlta) throw new ErrorHttp(400, 'Esta pasarela no necesita alta', 'sin_alta');
     const o = await ctx.db.one<any>('select stripe_cuenta_id, email_contacto from organizadores where id = $1', [c.organizadorId]);
+    if (o.stripe_cuenta_id === CUENTA_PROPIA) throw new ErrorHttp(400, 'Este organizador cobra en la cuenta de Stripe de la plataforma y no necesita alta', 'cuenta_propia');
     const r = await ctx.pasarela.enlaceAlta({ cuentaId: o.stripe_cuenta_id, email: o.email_contacto, urlVuelta: `${ctx.config.URL_PUBLICA}/panel/organizador` });
     const estado = ctx.pasarela.nombre === 'simulada' ? 'activa' : 'pendiente';
     await ctx.db.query(`update organizadores set stripe_cuenta_id = $2, stripe_estado = case when stripe_estado = 'activa' then 'activa' else $3 end where id = $1`, [c.organizadorId, r.cuentaId, estado]);
     await auditar(ctx.db, { organizadorId: c.organizadorId, usuarioId: c.usuarioId, accion: 'organizador.stripe_conectar', datos: { cuenta: r.cuentaId }, ip: req.ip });
     return r;
+  });
+
+  // ---- Solo administración de la plataforma: el organizador cobra en la cuenta de Stripe de la plataforma (sin Connect) ----
+  app.post('/api/plataforma/organizadores/:id/stripe-propia', async (req) => {
+    const s = exigirSuperadmin(ctx, req);
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const { activar } = z.object({ activar: z.boolean() }).parse(req.body);
+    const r = await ctx.db.one<{ id: string }>(
+      `update organizadores set stripe_cuenta_id = $2, stripe_estado = $3 where id = $1 returning id`,
+      [id, activar ? CUENTA_PROPIA : null, activar ? 'activa' : 'sin_conectar'],
+    );
+    if (!r) throw new ErrorHttp(404, 'Organizador no encontrado', 'no_encontrado');
+    await auditar(ctx.db, { organizadorId: id, usuarioId: s.usuario.id, accion: 'organizador.stripe_propia', datos: { activar }, ip: req.ip });
+    return { ok: true };
   });
 }
