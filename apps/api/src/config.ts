@@ -48,6 +48,11 @@ const Esquema = z.object({
   SMTP_URL: opcional,
   SMTP_USUARIO: opcional,
   SMTP_CLAVE: opcional,
+  // Envío por Microsoft Graph (preferente si está completo)
+  CORREO_GRAPH_TENANT_ID: opcional,
+  CORREO_GRAPH_CLIENT_ID: opcional,
+  CORREO_GRAPH_CLIENT_SECRET: opcional,
+  CORREO_GRAPH_BUZON: opcional,
   CORREO_REMITENTE: z.string().default('Taquilla <no-responder@taquilla.test>'),
   // Turnstile (Cloudflare)
   TURNSTILE_SECRET: opcional,
