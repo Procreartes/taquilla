@@ -97,20 +97,22 @@ export const CARPETA_MIGRACIONES = join(import.meta.dirname, '..', '..', '..', '
 
 /** Aplica, en orden y una sola vez, los ficheros NNNN_*.sql de db/migraciones. */
 export async function migrar(db: Db, carpeta = CARPETA_MIGRACIONES): Promise<string[]> {
-  await db.exec(`create table if not exists schema_migraciones (
-    nombre text primary key, aplicada_en timestamptz not null default now())`);
-  const hechas = new Set((await db.query<{ nombre: string }>('select nombre from schema_migraciones')).map((r) => r.nombre));
   const ficheros = readdirSync(carpeta).filter((f) => /^\d{4}_.+\.sql$/.test(f)).sort();
   const aplicadas: string[] = [];
-  for (const f of ficheros) {
-    if (hechas.has(f)) continue;
-    const sql = readFileSync(join(carpeta, f), 'utf8');
-    await db.tx(async (c) => {
+  // Un solo proceso migra a la vez: la API y el trabajador arrancan juntos y, con la base de datos
+  // vacía, se pisaban creando las mismas tablas. El cerrojo se suelta al terminar la transacción.
+  await db.tx(async (c) => {
+    await c.query('select pg_advisory_xact_lock(724103)');
+    await c.exec(`create table if not exists schema_migraciones (
+      nombre text primary key, aplicada_en timestamptz not null default now())`);
+    const hechas = new Set((await c.query<{ nombre: string }>('select nombre from schema_migraciones')).map((r) => r.nombre));
+    for (const f of ficheros) {
+      if (hechas.has(f)) continue;
       // pg y PGlite aceptan varias sentencias en una consulta sin parámetros
-      await c.exec(sql);
+      await c.exec(readFileSync(join(carpeta, f), 'utf8'));
       await c.query('insert into schema_migraciones (nombre) values ($1)', [f]);
-    });
-    aplicadas.push(f);
-  }
+      aplicadas.push(f);
+    }
+  });
   return aplicadas;
 }
