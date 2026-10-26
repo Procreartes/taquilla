@@ -42,7 +42,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     const { slug } = z.object({ slug: z.string().max(80) }).parse(req.params);
     const e = await ctx.db.one(
       `select e.id, e.slug, e.nombre, e.tipo, e.descripcion, e.imagen_url, e.datos->'islas' as islas, e.es_prueba,
-              o.nombre as organizador_nombre, o.color_primario, o.logo_url, o.gastos_gestion_cent
+              o.nombre as organizador_nombre, o.color_primario, o.logo_url, o.gastos_gestion_cent, o.gastos_gestion_pct
          from eventos e join organizadores o on o.id = e.organizador_id and o.activo where e.slug = $1 and e.publicado`,
       [slug],
     );
@@ -63,7 +63,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     const { id } = z.object({ id: uuid }).parse(req.params);
     const f = await ctx.db.one<any>(
       `select ${CAMPOS_FUNCION_PUBLICA}, f.version_plano_id, f.vendidas_general, e.slug as evento_slug, e.nombre as evento_nombre, e.datos->'islas' as islas,
-              o.nombre as organizador_nombre, o.gastos_gestion_cent, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales,
+              o.nombre as organizador_nombre, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales,
               v.receta as plano
          from funciones f join recintos r on r.id = f.recinto_id join eventos e on e.id = f.evento_id and e.publicado
          join organizadores o on o.id = f.organizador_id left join versiones_plano v on v.id = f.version_plano_id

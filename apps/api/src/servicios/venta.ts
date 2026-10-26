@@ -9,7 +9,7 @@
  *     y se devuelve el dinero automáticamente.
  */
 import { randomUUID } from 'node:crypto';
-import { mejorSitio, type Asiento, type ButacaExportada } from '@taquilla/dominio';
+import { gastosPorEntrada, mejorSitio, type Asiento, type ButacaExportada } from '@taquilla/dominio';
 import type { Contexto } from '../contexto';
 import type { Consultor } from '../db';
 import { cifrar, codigoLegible, descifrar, sha256, tokenAleatorio } from '../infra/cripto';
@@ -28,7 +28,7 @@ export interface PeticionReserva {
 /** Función a la venta con todo lo necesario para vender. Lanza si no se puede comprar. */
 export async function funcionVendible(c: Consultor, funcionId: string) {
   const f = await c.one<any>(
-    `select f.*, o.gastos_gestion_cent, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.stripe_cuenta_id, o.nombre as organizador_nombre,
+    `select f.*, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.stripe_cuenta_id, o.nombre as organizador_nombre,
             v.butacas as plano_butacas, v.receta->'zonas' as plano_zonas, (v.comprobacion->>'vend')::int as plano_plazas
        from funciones f
        join organizadores o on o.id = f.organizador_id and o.activo
@@ -94,7 +94,7 @@ export async function crearReserva(ctx: Contexto, p: PeticionReserva) {
       const tipo = b.tipo === 'silla_ruedas' ? 'Espacio PMR' : 'Butaca';
       return {
         zona_codigo: b.zona, zona_nombre: zonas.get(b.zona)?.nombre ?? b.zona, butaca_codigo: c,
-        descripcion: `${b.fila} · ${tipo} ${b.numero.replace('PMR ', '')}`, tipo_butaca: b.tipo, precio_cent: f.precios[b.zona], gastos_cent: f.gastos_gestion_cent,
+        descripcion: `${b.fila} · ${tipo} ${b.numero.replace('PMR ', '')}`, tipo_butaca: b.tipo, precio_cent: f.precios[b.zona], gastos_cent: gastosPorEntrada(f.precios[b.zona] ?? 0, f),
       };
     });
   } else {
@@ -107,7 +107,7 @@ export async function crearReserva(ctx: Contexto, p: PeticionReserva) {
     if (!ok) throw conflicto(disponibles > 0 ? 'No quedan tantas entradas disponibles ahora mismo' : 'Entradas agotadas', 'sin_sitio');
     lineas = Array.from({ length: n }, () => ({
       zona_codigo: 'general', zona_nombre: 'Entrada general', butaca_codigo: null, descripcion: 'Entrada general',
-      tipo_butaca: 'normal', precio_cent: f.precios.general, gastos_cent: f.gastos_gestion_cent,
+      tipo_butaca: 'normal', precio_cent: f.precios.general, gastos_cent: gastosPorEntrada(f.precios.general ?? 0, f),
     }));
   }
 

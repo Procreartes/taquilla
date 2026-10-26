@@ -35,6 +35,7 @@ export default function DatosOrganizador() {
           impuesto_tipo: Number(o.impuesto_tipo),
           impuesto_pendiente: o.impuesto_pendiente,
           gastos_gestion_cent: Number(o.gastos_gestion_cent),
+          gastos_gestion_pct: o.gastos_gestion_pct === '' || o.gastos_gestion_pct === null || o.gastos_gestion_pct === undefined ? null : Number(o.gastos_gestion_pct),
           max_entradas_pedido: Number(o.max_entradas_pedido),
         },
       });
@@ -82,6 +83,7 @@ export default function DatosOrganizador() {
           </label>
           <label className="campo">Tipo (%)<input type="number" step="0.01" min="0" max="99" value={org.impuesto_tipo} onChange={(e) => set('impuesto_tipo', e.target.value)} /></label>
           <label className="campo">Gastos de gestión por entrada (céntimos)<input type="number" min="0" value={org.gastos_gestion_cent} onChange={(e) => set('gastos_gestion_cent', e.target.value)} /></label>
+          <label className="campo">Gastos de gestión en % del precio (vacío = importe fijo)<input type="number" step="0.01" min="0" max="50" value={org.gastos_gestion_pct ?? ''} onChange={(e) => set('gastos_gestion_pct', e.target.value)} /></label>
         </div>
         <label className="check"><input type="checkbox" checked={org.impuesto_pendiente} onChange={(e) => set('impuesto_pendiente', e.target.checked)} /> El tipo de impuesto está pendiente de confirmar por la asesoría</label>
         <label className="campo" style={{ maxWidth: 260 }}>Máximo de entradas por compra<input type="number" min="1" max="50" value={org.max_entradas_pedido} onChange={(e) => set('max_entradas_pedido', e.target.value)} /></label>
