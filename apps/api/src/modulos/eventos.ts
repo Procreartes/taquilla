@@ -16,12 +16,15 @@ const uuid = z.string().uuid();
 const FECHA = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const HORA = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/);
 
+// Imagen: ruta de la propia web (/carteles/…) o URL https. La web solo carga imágenes propias (CSP img-src 'self').
+const IMAGEN = z.string().max(500).regex(/^(\/[A-Za-z0-9._\/-]+|https:\/\/\S+)$/, 'Imagen: ruta /carteles/… o URL https');
+
 const DatosEvento = z.object({
   slug: z.string().regex(/^[a-z0-9-]{2,80}$/),
   nombre: z.string().min(2).max(200),
   tipo: z.enum(['festival', 'gira', 'evento']).default('festival'),
   descripcion: z.string().max(5000).nullable().optional(),
-  imagen_url: z.string().url().max(500).nullable().optional(),
+  imagen_url: IMAGEN.nullable().optional(),
   publicado: z.boolean().optional(),
 });
 
@@ -39,6 +42,7 @@ const DatosFuncion = z.object({
   version_plano_id: uuid.nullable().optional(),
   aforo: z.number().int().min(1).max(200_000).nullable().optional(),
   venta_externa_url: z.string().url().max(500).nullable().optional(),
+  imagen_url: IMAGEN.nullable().optional(),
   verificar: z.boolean().optional(),
   publicada: z.boolean().optional(),
   cola_virtual: z.boolean().optional(),
@@ -288,11 +292,11 @@ export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
     if (await ctx.db.one('select 1 from funciones where evento_id = $1 and codigo = $2', [id, d.codigo])) throw conflicto('Ya hay una función con ese código en el evento');
     return ctx.db.one(
       `insert into funciones (organizador_id, evento_id, recinto_id, codigo, titulo, artistas, es_gala, edad_minima, nota, fecha, hora,
-                              modo_venta, version_plano_id, aforo, venta_externa_url, verificar, publicada)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) returning id`,
+                              modo_venta, version_plano_id, aforo, venta_externa_url, verificar, publicada, imagen_url)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) returning id`,
       [c.organizadorId, id, d.recinto_id, d.codigo, d.titulo, JSON.stringify(d.artistas), d.es_gala, d.edad_minima ?? null, d.nota ?? null,
         d.fecha, d.hora ?? null, d.modo_venta, d.modo_venta === 'numerada' ? d.version_plano_id : null, d.aforo ?? null,
-        d.venta_externa_url ?? null, d.verificar ?? false, d.publicada ?? true],
+        d.venta_externa_url ?? null, d.verificar ?? false, d.publicada ?? true, d.imagen_url ?? null],
     );
   });
 

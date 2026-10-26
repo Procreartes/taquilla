@@ -16,7 +16,7 @@ import { DOCUMENTOS_LEGALES, plantillaLegal } from '../servicios/legal';
 const uuid = z.string().uuid();
 
 const CAMPOS_FUNCION_PUBLICA = `f.id, f.codigo, f.titulo, f.artistas, f.programa, f.es_gala, f.edad_minima, f.nota, f.fecha, to_char(f.hora, 'HH24:MI') as hora,
-  f.modo_venta, f.estado, f.venta_externa_url, f.verificar, f.es_prueba, f.aforo, f.cola_virtual,
+  f.modo_venta, f.estado, f.venta_externa_url, f.imagen_url, f.verificar, f.es_prueba, f.aforo, f.cola_virtual,
   r.nombre as recinto_nombre, r.zona as recinto_zona, r.municipio, r.isla`;
 
 export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
