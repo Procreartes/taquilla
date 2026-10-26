@@ -14,7 +14,27 @@ export default function Inicio() {
   }, []);
   return (
     <>
-      <h1>{t('cartelera')}</h1>
+      <section className="hero" aria-labelledby="hero-titulo">
+        <div className="hero-luces" aria-hidden="true" />
+        <div className="hero-cuerpo">
+          <div className="hero-marcas">
+            <img src="/marca/dislate-blanco.png" alt="Dislate Producciones" width={80} height={96} />
+            <img src="/marca/livon-blanco.png" alt="Grupo Livon" width={110} height={38} />
+          </div>
+          <h1 id="hero-titulo">{t('heroTitulo')}</h1>
+          <p className="hero-sub">{t('heroSub')}</p>
+          <div className="fila" style={{ gap: 10 }}>
+            <a className="btn hero-btn" href="#cartelera">{t('heroEventos')}</a>
+            <a className="btn hero-btn sec" href="#cartelera">{t('heroAgenda')}</a>
+          </div>
+        </div>
+        <ul className="hero-tarjetas">
+          <li><span className="hero-icono" aria-hidden="true">♪</span><b>{t('heroMusica')}</b><span>{t('heroMusicaTxt')}</span></li>
+          <li><span className="hero-icono" aria-hidden="true">✦</span><b>{t('heroFestivales')}</b><span>{t('heroFestivalesTxt')}</span></li>
+          <li><span className="hero-icono" aria-hidden="true">◐</span><b>{t('heroEspectaculos')}</b><span>{t('heroEspectaculosTxt')}</span></li>
+        </ul>
+      </section>
+      <h2 id="cartelera" style={{ fontSize: 32, scrollMarginTop: 80 }}>{t('cartelera')}</h2>
       {!eventos ? <p role="status">{t('cargando')}</p> : (
         <div className="rejilla">
           {eventos.map((e) => (

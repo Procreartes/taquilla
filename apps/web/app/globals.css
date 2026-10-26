@@ -121,3 +121,28 @@ details.bloque>div{padding:0 12px 12px;display:grid;gap:10px}
 
 .capital{display:inline-block}
 .capital::first-letter{text-transform:uppercase}
+
+/* ---- Portada: cabecera (hero) ---- */
+.hero{position:relative;overflow:hidden;border-radius:var(--r);background:#0b0f1c;color:#fff;padding:clamp(28px,6vw,64px) clamp(20px,5vw,56px) 24px;isolation:isolate;display:grid;gap:28px}
+.hero-luces{position:absolute;inset:0;z-index:-1;background:
+  radial-gradient(60% 80% at 85% 0%,rgba(0,159,196,.55),transparent 60%),
+  radial-gradient(45% 70% at 60% 10%,rgba(255,0,0,.45),transparent 60%),
+  radial-gradient(70% 60% at 100% 100%,rgba(0,159,196,.25),transparent 70%),
+  linear-gradient(90deg,#0b0f1c 0%,rgba(11,15,28,.85) 45%,rgba(11,15,28,.35) 100%)}
+.hero-luces::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(100deg,transparent 0 40px,rgba(255,255,255,.025) 40px 41px)}
+.hero-cuerpo{display:grid;gap:16px;max-width:640px}
+.hero-marcas{display:flex;align-items:center;gap:18px}
+.hero-marcas img{height:40px;width:auto}
+.hero-marcas img:first-child{height:62px}
+.hero h1{font-size:clamp(40px,7vw,76px);font-weight:900;letter-spacing:-.03em;line-height:.98;color:#fff}
+.hero-sub{font-size:clamp(16px,2vw,19px);color:#dbe3f2;margin:0;max-width:54ch}
+.hero-btn{background:#d40000;border-color:#d40000;color:#fff}
+.hero-btn.sec{background:transparent;border-color:#5fd3ef;color:#fff}
+.hero-btn:focus-visible{outline-color:#5fd3ef}
+.hero-tarjetas{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hero-tarjetas li{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:14px 16px;display:grid;gap:2px;backdrop-filter:blur(4px)}
+.hero-tarjetas b{font-size:17px}
+.hero-tarjetas span:not(.hero-icono){font-size:14px;color:#c9d3e6}
+.hero-icono{font-size:22px;color:#5fd3ef;line-height:1}
+@media (max-width:640px){.hero-tarjetas{grid-template-columns:1fr}.hero-marcas img{height:36px}}
+@media (prefers-reduced-motion:no-preference){.hero-luces{animation:luces 14s ease-in-out infinite alternate}@keyframes luces{from{background-position:0 0}to{background-position:40px -20px}}}
