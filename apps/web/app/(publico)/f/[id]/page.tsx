@@ -291,8 +291,8 @@ function Paso2({ reserva, f, onVolver }: { reserva: any; f: any; onVolver: () =>
             </div>
           </fieldset>
           <div className="stack" style={{ gap: 8 }}>
-            <label className="check"><input type="checkbox" checked={c.condiciones} onChange={(e) => setC({ ...c, condiciones: e.target.checked })} /> <span>{t('aceptoCondiciones')} (<Link href="/legal/condiciones" target="_blank">{t('condiciones')}</Link>)</span></label>
-            <label className="check"><input type="checkbox" checked={c.privacidad} onChange={(e) => setC({ ...c, privacidad: e.target.checked })} /> <span>{t('aceptoPrivacidad')} (<Link href="/legal/privacidad" target="_blank">{t('privacidad')}</Link>)</span></label>
+            <label className="check"><input type="checkbox" checked={c.condiciones} onChange={(e) => setC({ ...c, condiciones: e.target.checked })} /> <span>{t('aceptoCondiciones')} (<Link href={`/legal/condiciones${f.organizador_slug ? `?org=${f.organizador_slug}` : ''}`} target="_blank">{t('condiciones')}</Link>)</span></label>
+            <label className="check"><input type="checkbox" checked={c.privacidad} onChange={(e) => setC({ ...c, privacidad: e.target.checked })} /> <span>{t('aceptoPrivacidad')} (<Link href={`/legal/privacidad${f.organizador_slug ? `?org=${f.organizador_slug}` : ''}`} target="_blank">{t('privacidad')}</Link>)</span></label>
             <label className="check"><input type="checkbox" checked={c.comunicacionesOrganizador} onChange={(e) => setC({ ...c, comunicacionesOrganizador: e.target.checked })} /> {t('comOrganizador', { org: f.organizador_nombre })}</label>
             <label className="check"><input type="checkbox" checked={c.comunicacionesPlataforma} onChange={(e) => setC({ ...c, comunicacionesPlataforma: e.target.checked })} /> {t('comPlataforma')}</label>
           </div>

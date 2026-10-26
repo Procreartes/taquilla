@@ -12,7 +12,7 @@ export function facturaHtml(p: any) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura simplificada ${esc(p.numero_factura)}</title>
 <style>body{font-family:Segoe UI,Arial,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#131a28}table{width:100%;border-collapse:collapse}td,th{padding:6px 4px;border-bottom:1px solid #d8dde7;text-align:left}.n{text-align:right}.borrador{background:#fcf1dd;border:1px solid #8a5608;padding:8px;border-radius:6px;font-size:13px}@media print{.borrador{display:none}}</style></head><body>
 ${p.es_prueba ? '<p class="borrador"><b>PRUEBA:</b> factura de una función ficticia. No tiene validez.</p>' : ''}
-<p class="borrador">Modelo de factura simplificada pendiente de revisión por la asesoría.</p>
+
 <h1>Factura simplificada</h1>
 <p><b>Nº ${esc(p.numero_factura)}</b> · Fecha de expedición: ${esc(fecha)}</p>
 <p><b>${esc(p.organizador_razon_social || p.organizador_nombre)}</b><br>CIF: ${esc(p.organizador_cif || 'pendiente')}<br>${esc(p.organizador_direccion || '')}</p>

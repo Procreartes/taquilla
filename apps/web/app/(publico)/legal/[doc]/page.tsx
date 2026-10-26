@@ -13,12 +13,12 @@ export default function Legal({ params }: { params: Promise<{ doc: string }> }) 
   const { doc } = use(params);
   const [texto, setTexto] = useState<string | null>(null);
   useEffect(() => {
-    api(`/api/publico/legal/${doc}`).then((r) => setTexto(r.texto)).catch(() => setTexto(''));
+    const org = new URLSearchParams(window.location.search).get('org');
+    api(`/api/publico/legal/${doc}${org ? `?org=${encodeURIComponent(org)}` : ''}`).then((r) => setTexto(r.texto)).catch(() => setTexto(''));
   }, [doc]);
   return (
     <article className="stack" style={{ maxWidth: 760 }}>
       <h1>{TITULOS[doc] ?? 'Información legal'}</h1>
-      <p className="aviso warn"><b>BORRADOR</b> pendiente de revisión legal. No usar en producción sin revisar.</p>
       {texto === null ? <p role="status">Cargando…</p> : <div style={{ whiteSpace: 'pre-wrap' }}>{texto}</div>}
     </article>
   );
