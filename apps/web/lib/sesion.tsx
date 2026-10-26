@@ -24,9 +24,21 @@ export function ProveedorSesion({ children }: { children: React.ReactNode }) {
   const [yo, setYo] = useState<Yo | null>(null);
   const recargar = useCallback(async () => {
     const y = await api<Yo>('/api/auth/yo');
-    if (!y.sesion || !y.completa) {
+    if (!y.sesion) {
       window.location.href = '/entrar';
       return;
+    }
+    if (!y.completa) {
+      // Sin la verificación en dos pasos activada (y obligatoria) solo se puede entrar a configurarla.
+      if (!y.usuario.totpActivo) {
+        if (window.location.pathname !== '/panel/seguridad') {
+          window.location.href = '/panel/seguridad';
+          return;
+        }
+      } else {
+        window.location.href = '/entrar';
+        return;
+      }
     }
     setYo(y);
   }, []);
