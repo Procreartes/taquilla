@@ -36,6 +36,7 @@ export default function Entrar() {
     if (err) setError(ERRORES[err] ?? 'No se pudo entrar.');
     api('/api/auth/yo').then((y) => {
       if (y.sesion && y.completa) router.replace(destino());
+      else if (y.sesion && !y.usuario?.totpActivo) router.replace('/panel/seguridad');
       else if (y.sesion) setPaso('2fa');
     }).catch(() => {});
   }, [router]);
