@@ -69,7 +69,10 @@ describe('fase 7 · seguridad', () => {
   });
 
   it('se niega a arrancar con claves reales de Stripe o sin secretos en producción', () => {
-    expect(() => leerConfig({ STRIPE_SECRET_KEY: 'sk_live_123' } as any)).toThrow(/modo prueba/);
+    // Claves reales: solo con el interruptor COBRO_REAL=true y en producción.
+    expect(() => leerConfig({ STRIPE_SECRET_KEY: 'sk_live_123' } as any)).toThrow(/COBRO_REAL/);
+    expect(() => leerConfig({ STRIPE_SECRET_KEY: 'sk_live_123', COBRO_REAL: 'true' } as any)).toThrow(/NODE_ENV=production/);
+    expect(() => leerConfig({ STRIPE_SECRET_KEY: 'sk_test_123', COBRO_REAL: 'true' } as any)).toThrow(/clave real/);
     expect(() => leerConfig({ NODE_ENV: 'production', DATABASE_URL: 'postgres://x' } as any)).toThrow(/SECRETO_SESION/);
   });
 

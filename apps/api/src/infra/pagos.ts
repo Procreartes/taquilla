@@ -54,8 +54,10 @@ export interface PasarelaPago {
 // ------------------------------------------------------------------------------------------------
 // Stripe Connect (cargos directos en la cuenta del organizador + application fee)
 
-export async function crearPasarelaStripe(secreto: string, secretosWebhook: string[]): Promise<PasarelaPago> {
-  if (!secreto.startsWith('sk_test_') && !secreto.startsWith('rk_test_')) throw new Error('Solo se admiten claves de Stripe en modo prueba');
+export async function crearPasarelaStripe(secreto: string, secretosWebhook: string[], cobroReal = false): Promise<PasarelaPago> {
+  const prueba = secreto.startsWith('sk_test_') || secreto.startsWith('rk_test_');
+  if (!prueba && !cobroReal) throw new Error('Solo se admiten claves de Stripe en modo prueba (falta COBRO_REAL=true)');
+  if (prueba && cobroReal) throw new Error('COBRO_REAL=true con una clave de prueba de Stripe');
   const Stripe = (await import('stripe')).default;
   const stripe = new Stripe(secreto);
   const opciones = (cuenta: string | null) => (cuenta ? { stripeAccount: cuenta } : undefined);

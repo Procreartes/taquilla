@@ -26,11 +26,27 @@ export interface Correos {
 
 const MAX_ADJUNTO_GUARDADO = 2 * 1024 * 1024;
 
-export async function crearCorreos(db: Consultor, opciones: { smtpUrl?: string; remitente: string; guardarAdjuntos: boolean }): Promise<Correos> {
+export async function crearCorreos(
+  db: Consultor,
+  opciones: { smtpUrl?: string; smtpUsuario?: string; smtpClave?: string; remitente: string; guardarAdjuntos: boolean },
+): Promise<Correos> {
   let transporte: { sendMail(m: object): Promise<unknown> } | null = null;
   if (opciones.smtpUrl) {
     const nodemailer = (await import('nodemailer')).default;
-    transporte = nodemailer.createTransport(opciones.smtpUrl);
+    if (opciones.smtpUsuario) {
+      // Usuario y contraseña aparte: no hace falta codificar caracteres especiales en la URL.
+      const u = new URL(opciones.smtpUrl);
+      const seguro = u.protocol === 'smtps:';
+      transporte = nodemailer.createTransport({
+        host: u.hostname,
+        port: Number(u.port) || (seguro ? 465 : 587),
+        secure: seguro,
+        requireTLS: !seguro,
+        auth: { user: opciones.smtpUsuario, pass: opciones.smtpClave ?? '' },
+      });
+    } else {
+      transporte = nodemailer.createTransport(opciones.smtpUrl);
+    }
   }
   return {
     async enviar(c) {
