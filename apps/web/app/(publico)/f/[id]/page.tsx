@@ -107,6 +107,10 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
 
   return (
     <>
+      {f.imagen_url && (
+        <img src={f.imagen_url} alt={`Cartel: ${f.titulo}`} width={1024} height={1536}
+          style={{ width: '100%', maxWidth: 420, height: 'auto', borderRadius: 12, display: 'block' }} />
+      )}
       <header className="stack" style={{ gap: 6, borderLeft: `6px solid ${color}`, paddingLeft: 14 }}>
         <Link className="small" href={`/e/${f.evento_slug}`}>← {f.evento_nombre}</Link>
         <h1>{f.titulo}</h1>

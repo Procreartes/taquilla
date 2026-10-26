@@ -1,0 +1,23 @@
+{
+  "id": "teatro-union-tejina",
+  "nombre": "Aforo completo",
+  "recinto": "Teatro Unión Tejina · La Laguna (Tenerife)",
+  "fuente": "Plano de butacas facilitado por Naroe Valls (26/10/2026)",
+  "notas": "Numeración del 1 desde la derecha del espectador. Sin fila 1: la primera fila es la F2. Cuatro espacios PMR delante de la F2.",
+  "aforo": { "butacas": 277, "pmr": 4 },
+  "zonas": [{ "codigo": "general", "nombre": "General", "color": "#6a3fd0", "precio": 15 }],
+  "bloques": [
+    { "id": "pmr", "nombre": "Espacios PMR", "codigo": "PMR", "desde": 1, "hasta": 1, "prefijo": "PMR-", "butacas": 4, "numeracion": "derecha",
+      "tramos": [{ "desde": 1, "hasta": 1, "zona": "general" }],
+      "pmr": [{ "fila": 1, "sustituye": "1, 2, 3, 4", "cantidad": 4 }] },
+    { "id": "patio", "nombre": "Patio", "codigo": "PATIO", "desde": 2, "hasta": 12, "prefijo": "F", "butacas": 13, "numeracion": "derecha",
+      "tramos": [{ "desde": 2, "hasta": 12, "zona": "general" }],
+      "excepciones": [{ "fila": 3, "butacas": 12 }, { "fila": 5, "butacas": 12 }, { "fila": 7, "butacas": 12 }, { "fila": 9, "butacas": 12 }, { "fila": 11, "butacas": 12 }] },
+    { "id": "anfi1", "nombre": "Anfiteatro (filas 13 y 14)", "codigo": "ANFIA", "desde": 13, "hasta": 14, "prefijo": "F", "butacas": 8, "numeracion": "derecha", "pasilloCentral": 220,
+      "tramos": [{ "desde": 13, "hasta": 14, "zona": "general" }] },
+    { "id": "anfi2", "nombre": "Anfiteatro", "codigo": "ANFIB", "desde": 15, "hasta": 24, "prefijo": "F", "butacas": 12, "numeracion": "derecha",
+      "tramos": [{ "desde": 15, "hasta": 24, "zona": "general" }],
+      "excepciones": [{ "fila": 15, "butacas": 13 }, { "fila": 17, "butacas": 13 }, { "fila": 19, "butacas": 13 }] }
+  ],
+  "ajustes": {}
+}
