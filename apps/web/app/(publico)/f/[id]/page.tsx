@@ -105,10 +105,11 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
     cargarDisp();
   }
 
+  const cartel: string | null = f.imagen_url ?? f.evento_imagen_url ?? f.imagen_tarjeta_url ?? f.evento_imagen_tarjeta_url ?? null;
   return (
     <>
-      {f.imagen_url && (
-        <img src={f.imagen_url} alt={`Cartel: ${f.titulo}`} width={1024} height={1536}
+      {cartel && (
+        <img src={cartel} alt={`Cartel: ${f.titulo}`}
           style={{ width: '100%', maxWidth: 420, height: 'auto', borderRadius: 12, display: 'block' }} />
       )}
       <header className="stack" style={{ gap: 6, borderLeft: `6px solid ${color}`, paddingLeft: 14 }}>

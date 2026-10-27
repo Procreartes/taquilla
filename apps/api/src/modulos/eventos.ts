@@ -25,6 +25,7 @@ const DatosEvento = z.object({
   tipo: z.enum(['festival', 'gira', 'evento']).default('festival'),
   descripcion: z.string().max(5000).nullable().optional(),
   imagen_url: IMAGEN.nullable().optional(),
+  imagen_tarjeta_url: IMAGEN.nullable().optional(),
   publicado: z.boolean().optional(),
 });
 
@@ -43,6 +44,7 @@ const DatosFuncion = z.object({
   aforo: z.number().int().min(1).max(200_000).nullable().optional(),
   venta_externa_url: z.string().url().max(500).nullable().optional(),
   imagen_url: IMAGEN.nullable().optional(),
+  imagen_tarjeta_url: IMAGEN.nullable().optional(),
   verificar: z.boolean().optional(),
   publicada: z.boolean().optional(),
   cola_virtual: z.boolean().optional(),
@@ -210,8 +212,8 @@ export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
     const d = DatosEvento.parse(req.body);
     if (await ctx.db.one('select 1 from eventos where slug = $1', [d.slug])) throw conflicto('Ya existe un evento con esa dirección');
     return ctx.db.one(
-      `insert into eventos (organizador_id, slug, nombre, tipo, descripcion, imagen_url, publicado) values ($1, $2, $3, $4, $5, $6, $7) returning *`,
-      [c.organizadorId, d.slug, d.nombre, d.tipo, d.descripcion ?? null, d.imagen_url ?? null, d.publicado ?? false],
+      `insert into eventos (organizador_id, slug, nombre, tipo, descripcion, imagen_url, imagen_tarjeta_url, publicado) values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`,
+      [c.organizadorId, d.slug, d.nombre, d.tipo, d.descripcion ?? null, d.imagen_url ?? null, d.imagen_tarjeta_url ?? null, d.publicado ?? false],
     );
   });
 
@@ -222,7 +224,7 @@ export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
     if (!e) throw noEncontrado('Evento');
     const funciones = await ctx.db.query(
       `select f.id, f.codigo, f.titulo, f.fecha, to_char(f.hora, 'HH24:MI') as hora, f.modo_venta, f.estado, f.aforo, f.verificar,
-              f.venta_externa_url, f.es_prueba, r.nombre as recinto_nombre, r.isla, r.municipio,
+              f.venta_externa_url, f.es_prueba, f.publicada, f.imagen_url, f.imagen_tarjeta_url, r.nombre as recinto_nombre, r.isla, r.municipio,
               (select json_object_agg(zona_codigo, precio_cent) from precios_funcion pf where pf.funcion_id = f.id) as precios
          from funciones f join recintos r on r.id = f.recinto_id
         where f.evento_id = $1 order by f.fecha, f.hora nulls last, f.codigo`,
@@ -292,11 +294,11 @@ export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
     if (await ctx.db.one('select 1 from funciones where evento_id = $1 and codigo = $2', [id, d.codigo])) throw conflicto('Ya hay una función con ese código en el evento');
     return ctx.db.one(
       `insert into funciones (organizador_id, evento_id, recinto_id, codigo, titulo, artistas, es_gala, edad_minima, nota, fecha, hora,
-                              modo_venta, version_plano_id, aforo, venta_externa_url, verificar, publicada, imagen_url)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) returning id`,
+                              modo_venta, version_plano_id, aforo, venta_externa_url, verificar, publicada, imagen_url, imagen_tarjeta_url)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) returning id`,
       [c.organizadorId, id, d.recinto_id, d.codigo, d.titulo, JSON.stringify(d.artistas), d.es_gala, d.edad_minima ?? null, d.nota ?? null,
         d.fecha, d.hora ?? null, d.modo_venta, d.modo_venta === 'numerada' ? d.version_plano_id : null, d.aforo ?? null,
-        d.venta_externa_url ?? null, d.verificar ?? false, d.publicada ?? true, d.imagen_url ?? null],
+        d.venta_externa_url ?? null, d.verificar ?? false, d.publicada ?? true, d.imagen_url ?? null, d.imagen_tarjeta_url ?? null],
     );
   });
 

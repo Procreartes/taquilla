@@ -5,6 +5,8 @@ import { api, eur, fechaLarga } from '@/lib/api';
 import { useSesion } from '@/lib/sesion';
 import { ESTADO_FUNCION, MODO_VENTA } from '@/lib/textos';
 import NavFuncion from '@/componentes/NavFuncion';
+import FormFuncion from '@/componentes/FormFuncion';
+import { useSearchParams } from 'next/navigation';
 
 export default function Funcion({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -12,6 +14,8 @@ export default function Funcion({ params }: { params: Promise<{ id: string }> })
   const [f, setF] = useState<any>(null);
   const [precios, setPrecios] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<{ tipo: string; texto: string } | null>(null);
+  const [msgDatos, setMsgDatos] = useState<{ tipo: string; texto: string } | null>(null);
+  const esNueva = useSearchParams().get('nueva') === '1';
 
   const aplicar = (d: any) => {
     setF(d);
@@ -76,6 +80,31 @@ export default function Funcion({ params }: { params: Promise<{ id: string }> })
           </div>
         )}
       </section>
+
+      {esNueva && f.estado === 'borrador' && (
+        <p className="aviso ok" role="status">Función creada en borrador. Revisa los precios (abajo), las invitaciones y acreditaciones, y cuando esté todo listo pulsa «Poner a la venta».</p>
+      )}
+
+      <details className="panel">
+        <summary><b>Datos de la función e imágenes</b> <span className="small muted">· {f.publicada ? 'visible en la web' : 'oculta en la web'}</span></summary>
+        <div style={{ marginTop: 12 }}>
+          <FormFuncion key={f.actualizado_en ?? f.id} boton="Guardar datos de la función" desactivado={!puede('eventos.editar')}
+            bloqueoVenta={f.estado !== 'borrador'}
+            inicial={{ ...f, fecha: String(f.fecha).slice(0, 10), artistas: f.artistas ?? [] }}
+            onGuardar={async (d) => {
+              setMsgDatos(null);
+              try {
+                const cuerpo: Record<string, unknown> = { ...d };
+                if (f.estado !== 'borrador') { delete cuerpo.recinto_id; delete cuerpo.modo_venta; delete cuerpo.version_plano_id; }
+                aplicar(await api(`/api/funciones/${id}`, { metodo: 'PATCH', cuerpo }));
+                setMsgDatos({ tipo: 'ok', texto: 'Datos de la función guardados.' });
+              } catch (err: any) {
+                setMsgDatos({ tipo: 'bad', texto: err.message });
+              }
+            }} />
+          {msgDatos && <p className={`aviso ${msgDatos.tipo}`} role="status">{msgDatos.texto}</p>}
+        </div>
+      </details>
 
       {f.modo_venta !== 'libre' && puede('eventos.editar') && <Cola f={f} onGuardar={(cuerpo) => accion(() => api(`/api/funciones/${id}`, { metodo: 'PATCH', cuerpo }), 'Cola virtual guardada.')} />}
 

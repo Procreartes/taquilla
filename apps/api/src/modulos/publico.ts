@@ -16,7 +16,7 @@ import { DOCUMENTOS_LEGALES, plantillaLegal } from '../servicios/legal';
 const uuid = z.string().uuid();
 
 const CAMPOS_FUNCION_PUBLICA = `f.id, f.codigo, f.titulo, f.artistas, f.programa, f.es_gala, f.edad_minima, f.nota, f.fecha, to_char(f.hora, 'HH24:MI') as hora,
-  f.modo_venta, f.estado, f.venta_externa_url, f.imagen_url, f.verificar, f.es_prueba, f.aforo, f.cola_virtual,
+  f.modo_venta, f.estado, f.venta_externa_url, f.imagen_url, f.imagen_tarjeta_url, f.verificar, f.es_prueba, f.aforo, f.cola_virtual,
   r.nombre as recinto_nombre, r.zona as recinto_zona, r.municipio, r.isla`;
 
 export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
@@ -38,7 +38,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
 
   app.get('/api/publico/eventos', async () =>
     ctx.db.query(
-      `select e.slug, e.nombre, e.tipo, e.imagen_url, e.es_prueba, min(f.fecha) as desde, max(f.fecha) as hasta, count(f.id)::int as funciones
+      `select e.slug, e.nombre, e.tipo, e.imagen_url, e.imagen_tarjeta_url, e.es_prueba, min(f.fecha) as desde, max(f.fecha) as hasta, count(f.id)::int as funciones
          from eventos e join funciones f on f.evento_id = e.id and f.publicada
         where e.publicado group by e.id order by min(f.fecha)`,
     ),
@@ -47,7 +47,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
   app.get('/api/publico/eventos/:slug', async (req) => {
     const { slug } = z.object({ slug: z.string().max(80) }).parse(req.params);
     const e = await ctx.db.one(
-      `select e.id, e.slug, e.nombre, e.tipo, e.descripcion, e.imagen_url, e.datos->'islas' as islas, e.es_prueba,
+      `select e.id, e.slug, e.nombre, e.tipo, e.descripcion, e.imagen_url, e.imagen_tarjeta_url, e.datos->'islas' as islas, e.es_prueba,
               o.nombre as organizador_nombre, o.color_primario, o.logo_url, o.gastos_gestion_cent, o.gastos_gestion_pct
          from eventos e join organizadores o on o.id = e.organizador_id and o.activo where e.slug = $1 and e.publicado`,
       [slug],
@@ -62,13 +62,16 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
       [e.id],
     );
     const { id: _id, ...publico } = e;
-    return { ...publico, funciones };
+    // Una función sin imágenes propias usa las del evento.
+    const conImagen = funciones.map((f: any) => ({ ...f, imagen_url: f.imagen_url ?? e.imagen_url, imagen_tarjeta_url: f.imagen_tarjeta_url ?? e.imagen_tarjeta_url }));
+    return { ...publico, funciones: conImagen };
   });
 
   app.get('/api/publico/funciones/:id', async (req) => {
     const { id } = z.object({ id: uuid }).parse(req.params);
     const f = await ctx.db.one<any>(
       `select ${CAMPOS_FUNCION_PUBLICA}, f.version_plano_id, f.vendidas_general, e.slug as evento_slug, e.nombre as evento_nombre, e.datos->'islas' as islas,
+              e.imagen_url as evento_imagen_url, e.imagen_tarjeta_url as evento_imagen_tarjeta_url,
               o.nombre as organizador_nombre, o.slug as organizador_slug, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales,
               v.receta as plano
          from funciones f join recintos r on r.id = f.recinto_id join eventos e on e.id = f.evento_id and e.publicado

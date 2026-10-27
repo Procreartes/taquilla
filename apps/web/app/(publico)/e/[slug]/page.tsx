@@ -8,6 +8,7 @@ import { accionFuncion } from '@/lib/funciones';
 type Isla = { id: string; nombre: string; estado?: string; etiqueta?: string; colores: { base: string; acento: string; claro: string } };
 type Funcion = {
   imagen_url?: string | null;
+  imagen_tarjeta_url?: string | null;
   id: string; titulo: string; artistas: string[]; fecha: string; hora: string | null; modo_venta: string; estado: string; venta_externa_url: string | null;
   es_prueba: boolean; verificar: boolean; recinto_nombre: string; municipio: string | null; isla: string; precio_desde: number | null; zonas_con_precio: number; edad_minima: number | null;
 };
@@ -60,7 +61,8 @@ export default function Cartelera({ params }: { params: Promise<{ slug: string }
           const color = porId[f.isla]?.colores.acento ?? 'var(--line)';
           return (
             <article key={f.id} className="panel stack" style={{ borderTop: `5px solid ${color}`, gap: 8 }}>
-              {f.imagen_url && <img src={f.imagen_url} alt="" loading="lazy" width={1024} height={1536} style={{ width: '100%', height: 'auto', borderRadius: 8 }} />}
+              {f.imagen_tarjeta_url ? <img src={f.imagen_tarjeta_url} alt="" loading="lazy" className="tarjeta-img" />
+                : f.imagen_url && <img src={f.imagen_url} alt="" loading="lazy" className="tarjeta-cartel" />}
               <div className="fila" style={{ justifyContent: 'space-between' }}>
                 <span className="small" style={{ fontWeight: 700, color: 'var(--muted)' }}>{porId[f.isla]?.nombre ?? f.isla}</span>
                 {f.es_prueba && <span className="tag demo">{t('funcionPrueba')}</span>}
