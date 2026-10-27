@@ -48,4 +48,29 @@ describe('entrada desde el portal de Grupo Livon', () => {
   it('informa de si está activado', async () => {
     expect((await m.cliente().get('/api/auth/portal/info')).datos).toEqual({ activo: true, url: 'https://portal.grupolivon.com' });
   });
+
+  it('contabilidad: lo cobrado por función, con base, impuesto, devoluciones y comisiones, solo con credencial del portal', async () => {
+    const F = (await m.ctx.db.one<{ id: string; evento_id: string; organizador_id: string }>(`select id, evento_id, organizador_id from funciones where codigo = 't01'`))!;
+    const c = m.cliente();
+    const r = await c.post('/api/publico/reservas', { funcionId: F.id, butacas: ['PLATEA-F1-1', 'PLATEA-F1-2'] });
+    const pago = await c.post(`/api/publico/pedidos/${r.datos.token}/pagar`, { nombre: 'Público', email: 'p@ejemplo.test', isla: 'Gran Canaria', municipio: 'LPGC', pais: 'España', idioma: 'es', consentimientos: { condiciones: true, privacidad: true } });
+    await c.post(`/api/pagos/simulado/${String(pago.datos.url).split('?')[0].split('/').pop()}/pagar`, { tarjeta: '4242424242424242' });
+    await m.ctx.colas.vaciar();
+    await m.ctx.db.query('update organizadores set es_prueba = false where id = $1', [F.organizador_id]);
+    await m.ctx.db.query('update funciones set es_prueba = false where id = $1', [F.id]);
+    await m.ctx.db.query(`update eventos set codigo_proyecto = 'P26-ASOMBRA' where id = $1`, [F.evento_id]);
+
+    const token = firmar({ aud: 'taquilla-contabilidad', jti: undefined });
+    const ok = await m.app.inject({ method: 'GET', url: '/api/integracion/contabilidad', headers: { authorization: `Bearer ${token}` } });
+    expect(ok.statusCode).toBe(200);
+    const fila = ok.json().find((x: any) => x.funcion_id === F.id);
+    expect(fila).toMatchObject({ codigo_proyecto: 'P26-ASOMBRA', pedidos: 1, entradas: 2, devuelto_cent: 0 });
+    expect(fila.neto_cent).toBe(fila.cobrado_cent);
+    expect(fila.base_cent).toBeLessThan(fila.neto_cent);
+    expect(fila.base_cent).toBeGreaterThan(Math.round(fila.neto_cent / 1.08));
+
+    expect((await m.app.inject({ method: 'GET', url: '/api/integracion/contabilidad' })).statusCode).toBe(401);
+    const otro = firmar({ aud: 'taquilla' });
+    expect((await m.app.inject({ method: 'GET', url: '/api/integracion/contabilidad', headers: { authorization: `Bearer ${otro}` } })).statusCode).toBe(401);
+  });
 });

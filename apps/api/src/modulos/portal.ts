@@ -15,8 +15,8 @@ export type DatosPase = { email: string; nombre: string; mfa: boolean; destino: 
 
 const DESTINO = /^\/(panel|puerta)(\/[A-Za-z0-9/_-]*)?$/;
 
-/** Comprueba firma, emisor, destinatario y tiempos. Devuelve null si algo no cuadra. */
-export function verificarPase(token: string, secreto: string, ahora = Date.now()): DatosPase | null {
+/** Firma HS256, emisor «portal-livon», destinatario y caducidad. Devuelve los datos o null. */
+export function verificarJwt(token: string, secreto: string, audiencia: string, ahora = Date.now(), vidaMaxSeg = 180): Record<string, any> | null {
   const partes = token.split('.');
   if (partes.length !== 3) return null;
   const [h, p, f] = partes;
@@ -33,9 +33,16 @@ export function verificarPase(token: string, secreto: string, ahora = Date.now()
   if (recibida.length !== esperada.length || !timingSafeEqual(recibida, esperada)) return null;
   const seg = Math.floor(ahora / 1000);
   const aud = Array.isArray(d.aud) ? d.aud : [d.aud];
-  if (d.iss !== 'portal-livon' || !aud.includes('taquilla')) return null;
+  if (d.iss !== 'portal-livon' || !aud.includes(audiencia)) return null;
   if (typeof d.exp !== 'number' || d.exp < seg - 5) return null;
-  if (typeof d.iat !== 'number' || d.iat > seg + 30 || seg - d.iat > 180) return null;
+  if (typeof d.iat !== 'number' || d.iat > seg + 30 || seg - d.iat > vidaMaxSeg) return null;
+  return d;
+}
+
+/** Comprueba firma, emisor, destinatario y tiempos. Devuelve null si algo no cuadra. */
+export function verificarPase(token: string, secreto: string, ahora = Date.now()): DatosPase | null {
+  const d = verificarJwt(token, secreto, 'taquilla', ahora);
+  if (!d) return null;
   if (typeof d.jti !== 'string' || d.jti.length < 16 || d.jti.length > 100) return null;
   const email = String(d.email ?? '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
@@ -77,5 +84,39 @@ export async function rutasPortal(app: FastifyInstance, ctx: Contexto) {
     await auditar(ctx.db, { usuarioId: u.id, accion: 'auth.entrar_portal', datos: { mfa: d.mfa }, ip: req.ip });
     const necesita2fa = !d.mfa && (u.totp_activo || ctx.config.EXIGIR_2FA);
     return { ok: true, destino: d.destino ?? '/panel', necesita2fa, configurar2fa: necesita2fa && !u.totp_activo };
+  });
+
+  /**
+   * Para la contabilidad (Livon Gestión, a través del portal): lo cobrado por cada función, con devoluciones,
+   * base imponible, impuesto y comisiones de la pasarela. Solo funciones reales (sin pruebas) con algún pago.
+   * Autenticación: JWT HS256 firmado por el portal con la misma clave (destinatario «taquilla-contabilidad»).
+   */
+  app.get('/api/integracion/contabilidad', async (req) => {
+    const secreto = ctx.config.PORTAL_SSO_SECRET;
+    if (!secreto) throw new ErrorHttp(503, 'Integración no configurada', 'no_configurado');
+    const token = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
+    if (!token || !verificarJwt(token, secreto, 'taquilla-contabilidad')) throw new ErrorHttp(401, 'Credencial no válida', 'credencial');
+    const { desde } = z.object({ desde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).parse(req.query);
+    return ctx.db.query(
+      `with p as (
+         select p.funcion_id, p.id, p.total_cent, p.importe_entradas_cent, p.gastos_cent, coalesce(p.comision_pasarela_cent, 0) as comision, p.impuesto_tipo, p.pagado_en,
+                coalesce((select sum(d.importe_cent) from devoluciones d where d.pedido_id = p.id and d.estado = 'hecha'), 0) as devuelto
+           from pedidos p
+          where p.canal <> 'invitacion' and p.pagado_en is not null and p.estado in ('pagado', 'devuelto', 'devuelto_parcial')
+       )
+       select f.id as funcion_id, f.codigo, f.titulo, to_char(f.fecha, 'YYYY-MM-DD') as fecha, e.nombre as evento, e.codigo_proyecto,
+              o.nombre as organizador, o.razon_social, o.cif, o.impuesto_nombre,
+              count(p.id)::int as pedidos,
+              (select count(*)::int from entradas x where x.funcion_id = f.id and x.tipo_entrada = 'venta' and x.estado in ('valida', 'usada')) as entradas,
+              sum(p.total_cent)::int as cobrado_cent, sum(p.devuelto)::int as devuelto_cent,
+              sum(p.total_cent - p.devuelto)::int as neto_cent,
+              round(sum((p.total_cent - p.devuelto) / (1 + p.impuesto_tipo / 100.0)))::int as base_cent,
+              sum(p.gastos_cent)::int as gastos_cent, sum(p.comision)::int as comisiones_cent,
+              to_char(max(p.pagado_en) at time zone 'Atlantic/Canary', 'YYYY-MM-DD') as ultimo_pago
+         from p join funciones f on f.id = p.funcion_id join eventos e on e.id = f.evento_id join organizadores o on o.id = f.organizador_id
+        where not f.es_prueba and not o.es_prueba ${desde ? 'and f.fecha >= $1' : ''}
+        group by f.id, e.id, o.id order by f.fecha, f.codigo`,
+      desde ? [desde] : [],
+    );
   });
 }
