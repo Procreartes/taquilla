@@ -6,7 +6,7 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
-import { agregarPublico, calcularLiquidacion } from '@taquilla/dominio';
+import { agregarPublico, calcularLiquidacion, puede } from '@taquilla/dominio';
 import type { Contexto } from '../contexto';
 import type { Consultor } from '../db';
 import { exigir } from '../auth';
@@ -108,7 +108,106 @@ async function enviarTabla(reply: FastifyReply, formato: 'csv' | 'xlsx', nombre:
 
 const eurNum = (c: number | null | undefined) => (c === null || c === undefined ? null : Math.round(c) / 100);
 
+/**
+ * Resumen del organizador para la portada del panel: cifras, ventas de los últimos 30 días,
+ * próximas funciones con su ocupación y últimos pedidos. Sin funciones de prueba (salvo en un organizador de prueba).
+ * Las cifras de dinero y los pedidos solo se devuelven a quien puede ver informes.
+ */
+export async function resumenOrganizador(c: Consultor, organizadorId: string, conDinero: boolean, opciones: { dias?: number; pruebas?: boolean } = {}) {
+  const dias = opciones.dias ?? 30;
+  const org = await c.one<{ es_prueba: boolean; nombre: string }>('select es_prueba, nombre from organizadores where id = $1', [organizadorId]);
+  const pruebas = org?.es_prueba || opciones.pruebas ? '' : 'and not f.es_prueba';
+  const hoy = `(now() at time zone 'Atlantic/Canary')::date`;
+
+  const entradas = (await c.one<any>(
+    `select count(*) filter (where e.tipo_entrada = 'venta')::int as vendidas,
+            count(*) filter (where e.tipo_entrada <> 'venta')::int as invitaciones,
+            count(*) filter (where e.tipo_entrada = 'venta' and (e.creado_en at time zone 'Atlantic/Canary')::date = ${hoy})::int as vendidas_hoy,
+            count(*) filter (where e.estado = 'usada')::int as dentro
+       from entradas e join funciones f on f.id = e.funcion_id
+      where e.organizador_id = $1 and e.estado in ('valida', 'usada') ${pruebas}`,
+    [organizadorId],
+  ))!;
+  const funciones = (await c.one<any>(
+    `select count(*) filter (where f.fecha >= ${hoy} and f.estado = 'a_la_venta')::int as a_la_venta,
+            count(*) filter (where f.fecha >= ${hoy})::int as proximas
+       from funciones f where f.organizador_id = $1 ${pruebas}`,
+    [organizadorId],
+  ))!;
+
+  const proximas = await c.query<any>(
+    `select f.id, f.titulo, f.fecha, to_char(f.hora, 'HH24:MI') as hora, f.estado, f.modo_venta, f.es_prueba, (f.venta_externa_url is not null) as venta_externa,
+            e.nombre as evento_nombre, r.nombre as recinto, r.municipio,
+            case when f.modo_venta = 'numerada' then (v.comprobacion->>'vend')::int else f.aforo end as plazas,
+            (select count(*)::int from entradas x where x.funcion_id = f.id and x.estado in ('valida', 'usada') and x.tipo_entrada = 'venta') as vendidas,
+            (select count(*)::int from entradas x where x.funcion_id = f.id and x.estado in ('valida', 'usada') and x.tipo_entrada <> 'venta') as invitaciones,
+            (select coalesce(sum(p.importe_entradas_cent), 0)::int from pedidos p where p.funcion_id = f.id and p.canal <> 'invitacion' and p.estado in ('pagado', 'devuelto_parcial')) as importe
+       from funciones f join eventos e on e.id = f.evento_id join recintos r on r.id = f.recinto_id
+       left join versiones_plano v on v.id = f.version_plano_id
+      where f.organizador_id = $1 and f.fecha >= ${hoy} and f.estado <> 'cancelada' ${pruebas}
+      order by f.fecha, f.hora nulls last limit 12`,
+    [organizadorId],
+  );
+
+  // Serie diaria completa (los días sin ventas van a cero)
+  const serie = await c.query<any>(
+    `with dias as (select generate_series(${hoy} - ($2::int - 1), ${hoy}, interval '1 day')::date as dia),
+          v as (select (p.pagado_en at time zone 'Atlantic/Canary')::date as dia,
+                       count(e.id) filter (where e.tipo_entrada = 'venta')::int as entradas
+                  from pedidos p join funciones f on f.id = p.funcion_id join entradas e on e.pedido_id = p.id
+                 where p.organizador_id = $1 and p.canal <> 'invitacion' and p.pagado_en is not null ${pruebas}
+                 group by 1),
+          d as (select (p.pagado_en at time zone 'Atlantic/Canary')::date as dia, sum(p.total_cent)::int as cobrado
+                  from pedidos p join funciones f on f.id = p.funcion_id
+                 where p.organizador_id = $1 and p.canal <> 'invitacion' and p.pagado_en is not null
+                   and p.estado in ('pagado', 'devuelto', 'devuelto_parcial') ${pruebas}
+                 group by 1)
+     select to_char(dias.dia, 'YYYY-MM-DD') as dia, coalesce(v.entradas, 0)::int as entradas, coalesce(d.cobrado, 0)::int as cobrado
+       from dias left join v on v.dia = dias.dia left join d on d.dia = dias.dia order by dias.dia`,
+    [organizadorId, dias],
+  );
+
+  const base = {
+    organizador: org?.nombre ?? '',
+    entradas: { vendidas: entradas.vendidas, invitaciones: entradas.invitaciones, vendidas_hoy: entradas.vendidas_hoy, dentro: entradas.dentro },
+    funciones,
+    proximas: proximas.map((f) => ({ ...f, ocupacion: f.plazas ? (f.vendidas + f.invitaciones) / f.plazas : null, importe: conDinero ? f.importe : null })),
+    serie: serie.map((d) => ({ dia: d.dia, entradas: d.entradas, cobrado: conDinero ? d.cobrado : null })),
+  };
+  if (!conDinero) return { ...base, dinero: null, ultimos: [] };
+
+  const dinero = (await c.one<any>(
+    `select coalesce(sum(p.importe_entradas_cent), 0)::int as entradas, coalesce(sum(p.gastos_cent), 0)::int as gastos,
+            coalesce(sum(p.total_cent), 0)::int as cobrado, coalesce(sum(p.comision_pasarela_cent), 0)::int as comisiones,
+            count(*)::int as pedidos,
+            coalesce(sum(p.total_cent) filter (where (p.pagado_en at time zone 'Atlantic/Canary')::date = ${hoy}), 0)::int as cobrado_hoy
+       from pedidos p join funciones f on f.id = p.funcion_id
+      where p.organizador_id = $1 and p.canal <> 'invitacion' and p.estado in ('pagado', 'devuelto', 'devuelto_parcial') ${pruebas}`,
+    [organizadorId],
+  ))!;
+  const devuelto = (await c.one<{ n: number }>(
+    `select coalesce(sum(d.importe_cent), 0)::int as n from devoluciones d join pedidos p on p.id = d.pedido_id join funciones f on f.id = p.funcion_id
+      where p.organizador_id = $1 and d.estado = 'hecha' ${pruebas}`,
+    [organizadorId],
+  ))!.n;
+  const ultimos = await c.query<any>(
+    `select p.id, p.codigo, p.total_cent, p.pagado_en, p.estado, p.canal, f.titulo,
+            (select count(*)::int from entradas e where e.pedido_id = p.id) as entradas
+       from pedidos p join funciones f on f.id = p.funcion_id
+      where p.organizador_id = $1 and p.canal <> 'invitacion' and p.pagado_en is not null ${pruebas}
+      order by p.pagado_en desc limit 6`,
+    [organizadorId],
+  );
+  return { ...base, dinero: { ...dinero, devuelto, neto: dinero.cobrado - devuelto - dinero.comisiones }, ultimos };
+}
+
 export async function rutasPanel(app: FastifyInstance, ctx: Contexto) {
+  app.get('/api/panel/resumen', async (req) => {
+    const c = exigir(ctx, req, 'eventos.ver');
+    const q = z.object({ pruebas: z.enum(['0', '1']).default('0'), dias: z.coerce.number().int().min(7).max(90).default(30) }).parse(req.query);
+    return resumenOrganizador(ctx.db, c.organizadorId, puede(c.rol, 'informes.ver'), { dias: q.dias, pruebas: q.pruebas === '1' });
+  });
+
   app.get('/api/panel/funciones/:id', async (req) => {
     const c = exigir(ctx, req, 'informes.ver');
     const { id } = z.object({ id: uuid }).parse(req.params);
