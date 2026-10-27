@@ -97,13 +97,20 @@ const es = {
   privacidad: 'Privacidad',
   condiciones: 'Condiciones de compra',
   cookies: 'Cookies',
+  menu: 'Menú', cerrarMenu: 'Cerrar menú', buscarBoton: 'Buscar', buscarPh: 'Evento, artista o lugar', agenda: 'Agenda', inicio: 'Inicio',
+  destacado: 'Destacado', verEvento: 'Ver evento', sinResultados: 'No hay funciones que coincidan con tu búsqueda.', resultados: '{n} funciones',
+  agendaSub: 'Todas las próximas funciones. Busca por nombre, artista, lugar o isla.', todo: 'Todo', otros: 'Otros', limpiar: 'Quitar filtros',
+  sinEventos: 'Pronto anunciaremos nuevos eventos.', yMas: 'y {n} más', resultado1: '1 función',
 } as const;
 
 export type Clave = keyof typeof es;
 type Diccionario = Record<Clave, string>;
 
 const en: Diccionario = {
-  idioma: 'Language', cartelera: "What's on", heroTitulo: 'The best is live', heroSub: 'Tickets for concerts, festivals and shows in the Canary Islands. Pick your seat and keep your ticket on your phone.', heroEventos: 'Discover events', heroAgenda: 'See the programme', heroMusica: 'Live music', heroMusicaTxt: 'Concerts and gigs', heroFestivales: 'Festivals', heroFestivalesTxt: 'Several days, several islands', heroEspectaculos: 'Shows', heroEspectaculosTxt: 'Magic, comedy and theatre', todas: 'All', filtrarIsla: 'Filter by island', proximamente: 'Coming soon', comprar: 'Buy',
+  idioma: 'Language', menu: 'Menu', cerrarMenu: 'Close menu', buscarBoton: 'Search', buscarPh: 'Event, artist or venue', agenda: 'Programme', inicio: 'Home',
+  destacado: 'Featured', verEvento: 'See event', sinResultados: 'No shows match your search.', resultados: '{n} shows',
+  agendaSub: 'All upcoming shows. Search by name, artist, venue or island.', todo: 'All', otros: 'Other', limpiar: 'Clear filters', sinEventos: 'New events coming soon.', yMas: 'and {n} more', resultado1: '1 show',
+  cartelera: "What's on", heroTitulo: 'The best is live', heroSub: 'Tickets for concerts, festivals and shows in the Canary Islands. Pick your seat and keep your ticket on your phone.', heroEventos: 'Discover events', heroAgenda: 'See the programme', heroMusica: 'Live music', heroMusicaTxt: 'Concerts and gigs', heroFestivales: 'Festivals', heroFestivalesTxt: 'Several days, several islands', heroEspectaculos: 'Shows', heroEspectaculosTxt: 'Magic, comedy and theatre', todas: 'All', filtrarIsla: 'Filter by island', proximamente: 'Coming soon', comprar: 'Buy',
   comprarEntradas: 'Buy tickets', desde: 'From', gratis: 'Free entry', gratisDetalle: 'Free entry while space lasts. No ticket needed.',
   precioPorConfirmar: 'Price to be confirmed', entradasProximamente: 'Tickets coming soon', ventaOficial: 'Official sale at Entradas Canarias',
   agotado: 'Sold out', noALaVenta: 'Not on sale', pausada: 'Sales paused', cancelada: 'Cancelled', horaPorConfirmar: 'Time to be confirmed',
@@ -127,7 +134,10 @@ const en: Diccionario = {
 };
 
 const de: Diccionario = {
-  idioma: 'Sprache', cartelera: 'Programm', heroTitulo: 'Live ist am schönsten', heroSub: 'Tickets für Konzerte, Festivals und Shows auf den Kanarischen Inseln. Platz wählen, Ticket aufs Handy.', heroEventos: 'Events entdecken', heroAgenda: 'Zum Programm', heroMusica: 'Live-Musik', heroMusicaTxt: 'Konzerte und Auftritte', heroFestivales: 'Festivals', heroFestivalesTxt: 'Mehrere Tage, mehrere Inseln', heroEspectaculos: 'Shows', heroEspectaculosTxt: 'Magie, Comedy und Theater', todas: 'Alle', filtrarIsla: 'Nach Insel filtern', proximamente: 'Demnächst', comprar: 'Kaufen',
+  idioma: 'Sprache', menu: 'Menü', cerrarMenu: 'Menü schließen', buscarBoton: 'Suchen', buscarPh: 'Event, Künstler oder Ort', agenda: 'Programm', inicio: 'Start',
+  destacado: 'Highlight', verEvento: 'Zum Event', sinResultados: 'Keine Vorstellungen gefunden.', resultados: '{n} Vorstellungen',
+  agendaSub: 'Alle kommenden Vorstellungen. Suche nach Name, Künstler, Ort oder Insel.', todo: 'Alle', otros: 'Andere', limpiar: 'Filter entfernen', sinEventos: 'Bald gibt es neue Events.', yMas: 'und {n} weitere', resultado1: '1 Vorstellung',
+  cartelera: 'Programm', heroTitulo: 'Live ist am schönsten', heroSub: 'Tickets für Konzerte, Festivals und Shows auf den Kanarischen Inseln. Platz wählen, Ticket aufs Handy.', heroEventos: 'Events entdecken', heroAgenda: 'Zum Programm', heroMusica: 'Live-Musik', heroMusicaTxt: 'Konzerte und Auftritte', heroFestivales: 'Festivals', heroFestivalesTxt: 'Mehrere Tage, mehrere Inseln', heroEspectaculos: 'Shows', heroEspectaculosTxt: 'Magie, Comedy und Theater', todas: 'Alle', filtrarIsla: 'Nach Insel filtern', proximamente: 'Demnächst', comprar: 'Kaufen',
   comprarEntradas: 'Tickets kaufen', desde: 'Ab', gratis: 'Eintritt frei', gratisDetalle: 'Freier Eintritt, solange Plätze frei sind. Kein Ticket nötig.',
   precioPorConfirmar: 'Preis wird noch bestätigt', entradasProximamente: 'Tickets demnächst', ventaOficial: 'Offizieller Verkauf bei Entradas Canarias',
   agotado: 'Ausverkauft', noALaVenta: 'Nicht im Verkauf', pausada: 'Verkauf pausiert', cancelada: 'Abgesagt', horaPorConfirmar: 'Uhrzeit wird noch bestätigt',

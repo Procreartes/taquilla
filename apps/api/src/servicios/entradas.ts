@@ -7,6 +7,7 @@ import { codigoFuncionQr, comprobarFirma, firmaEstatica, leerQr, llaveRotacion, 
 import type { Contexto } from '../contexto';
 import type { Consultor } from '../db';
 import { eur, fechaTexto } from './plantillas';
+import { varianteImagen } from './imagenes';
 
 export async function llavesEntradas(ctx: Contexto, entradas: { codigo: string; funcion_id: string }[]) {
   return Promise.all(entradas.map(async (e) => ({ codigo: e.codigo, fcod: codigoFuncionQr(e.funcion_id), llave: await llaveRotacion(ctx.config.SECRETO_QR, e.funcion_id, e.codigo) })));
@@ -19,17 +20,29 @@ export async function pdfEntradas(ctx: Contexto, p: any): Promise<Buffer> {
   doc.on('data', (b: Buffer) => trozos.push(b));
   const fin = new Promise<Buffer>((r) => doc.on('end', () => r(Buffer.concat(trozos))));
   const vivas = p.entradas.filter((e: any) => ['valida', 'usada'].includes(e.estado));
+  // Cartel del evento (si lo hay) arriba a la derecha de cada entrada.
+  const cartelJpg = await varianteImagen(ctx, p.cartel_url, 'pdf').catch(() => null);
+  const cartel = cartelJpg ? (() => { try { return (doc as any).openImage(cartelJpg); } catch { return null; } })() : null;
+  const CARTEL_ANCHO = 160, CARTEL_ALTO = 240;
+  const anchoTexto = cartel ? 320 : 500;
   for (const [i, e] of vivas.entries()) {
     if (i) doc.addPage();
     if (p.es_prueba) {
       doc.save().rotate(-30, { origin: [300, 420] }).fontSize(70).fillColor('#e7a43a').opacity(0.25).text('PRUEBA', 90, 380).restore().opacity(1);
     }
-    doc.fillColor('#4f596c').fontSize(10).text(p.evento_nombre.toUpperCase(), { characterSpacing: 1 });
-    doc.moveDown(0.3).fillColor('#131a28').fontSize(24).font('Helvetica-Bold').text(p.titulo);
-    doc.moveDown(0.3).font('Helvetica').fontSize(13).text(`${fechaTexto(p.fecha)}${p.hora ? ' · ' + p.hora : ''}`);
-    doc.text(`${p.recinto_nombre}${p.municipio ? ', ' + p.municipio : ''}`);
+    let altoCartel = 0;
+    if (cartel) {
+      const escala = Math.min(CARTEL_ANCHO / cartel.width, CARTEL_ALTO / cartel.height);
+      const w = cartel.width * escala;
+      altoCartel = cartel.height * escala;
+      doc.image(cartel, 547 - w, 48, { width: w });
+    }
+    doc.fillColor('#4f596c').font('Helvetica').fontSize(10).text(p.evento_nombre.toUpperCase(), 48, 48, { characterSpacing: 1, width: anchoTexto });
+    doc.moveDown(0.3).fillColor('#131a28').fontSize(24).font('Helvetica-Bold').text(p.titulo, { width: anchoTexto });
+    doc.moveDown(0.3).font('Helvetica').fontSize(13).text(`${fechaTexto(p.fecha)}${p.hora ? ' · ' + p.hora : ''}`, { width: anchoTexto });
+    doc.text(`${p.recinto_nombre}${p.municipio ? ', ' + p.municipio : ''}`, { width: anchoTexto });
     doc.moveDown(1);
-    const y = doc.y;
+    const y = Math.max(doc.y, 48 + altoCartel + 20);
     const qr = await QRCode.toBuffer(await qrEstatico(ctx.config.SECRETO_QR, p.funcion_id, e.codigo), { errorCorrectionLevel: 'M', margin: 1, width: 360 });
     doc.image(qr, 48, y, { width: 200 });
     doc.font('Helvetica-Bold').fontSize(18).text(e.descripcion, 270, y + 10, { width: 280 });

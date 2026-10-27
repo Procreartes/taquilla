@@ -154,3 +154,9 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 **D-060 · Accesibilidad revisada con axe-core (WCAG 2.2 AA)** en cartelera, ficha y compra, pedido, entrar, panel de ventas, editor de planos y puerta: sin infracciones tras corregir un atributo ARIA en los filtros. Vista móvil (375 px) sin desplazamiento horizontal. Queda pendiente una revisión manual con lector de pantalla (NVDA/VoiceOver) por una persona experta.
 
 **D-061 · La web de ASOMBRA no se ha tocado.** El widget está listo para insertarlo cuando se decida vender ASOMBRA aquí.
+
+## 27/10/2026 · Imágenes y portada
+- Las miniaturas para compartir (1200 × 630) y las versiones ligeras para correo y PDF se generan en la API con `sharp` y se guardan en memoria; el original sigue en la base de datos. Si `sharp` fallara, la web sigue funcionando sin miniatura.
+- La agenda y la búsqueda filtran en el navegador (pocos cientos de funciones); si crece mucho, se pasará la búsqueda al servidor.
+- El enlace al panel sale solo en el pie («Acceso del equipo»), no en la portada.
+- Unificar con el portal de Grupo Livon: primero inicio de sesión con Microsoft 365 (Entra ID ya está preparado), luego accesos directos y datos en el portal. La venta pública sigue separada.
