@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
@@ -28,13 +28,32 @@ export default function Entrar() {
   const [ocupado, setOcupado] = useState(false);
   const [pruebas, setPruebas] = useState<UsuarioPrueba[]>([]);
   const [entra, setEntra] = useState(false);
+  const [portal, setPortal] = useState<{ activo: boolean; url: string } | null>(null);
+  const [desdePortal, setDesdePortal] = useState(false);
+  const viaPortal = useRef(typeof window !== 'undefined' && window.location.hash.startsWith('#portal='));
 
   useEffect(() => {
+    // Llegada desde el portal de Grupo Livon: el pase viene en el fragmento (#portal=…), que no se envía a ningún servidor.
+    const m = window.location.hash.match(/^#portal=([A-Za-z0-9_\-.]+)$/);
+    if (!m) return;
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    setDesdePortal(true);
+    api('/api/auth/portal', { cuerpo: { pase: m[1] } })
+      .then((r) => {
+        if (r.necesita2fa && !r.configurar2fa) { setPaso('2fa'); setDesdePortal(false); }
+        else router.replace(r.configurar2fa ? '/panel/seguridad' : r.destino);
+      })
+      .catch((err) => { setError(err.message); setDesdePortal(false); });
+  }, [router]);
+
+  useEffect(() => {
+    api('/api/auth/portal/info').then(setPortal).catch(() => {});
     api<UsuarioPrueba[]>('/api/auth/usuarios-prueba').then(setPruebas).catch(() => {});
     api('/api/auth/opciones').then((o) => setEntra(o.entra)).catch(() => {});
     const err = new URLSearchParams(window.location.search).get('error');
     if (err) setError(ERRORES[err] ?? 'No se pudo entrar.');
     api('/api/auth/yo').then((y) => {
+      if (viaPortal.current) return;
       if (y.sesion && y.completa) router.replace(destino());
       else if (y.sesion && !y.usuario?.totpActivo) router.replace('/panel/seguridad');
       else if (y.sesion) setPaso('2fa');
@@ -75,6 +94,10 @@ export default function Entrar() {
     <main id="contenido" className="wrap" style={{ maxWidth: 520 }}>
       <h1>Entrar</h1>
       <p className="muted">Acceso para el equipo de cada organizador.</p>
+      {desdePortal && <p className="aviso" role="status">Entrando desde el portal de Grupo Livon…</p>}
+      {portal?.activo && paso === 'clave' && (
+        <a className="btn acento" href={`${portal.url.replace(/\/$/, '')}/ir/taquilla`}>Entrar con el portal de Grupo Livon</a>
+      )}
       <form className="panel stack" onSubmit={enviar} noValidate>
         {paso === 'clave' ? (
           <>

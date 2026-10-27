@@ -160,3 +160,9 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 - La agenda y la búsqueda filtran en el navegador (pocos cientos de funciones); si crece mucho, se pasará la búsqueda al servidor.
 - El enlace al panel sale solo en el pie («Acceso del equipo»), no en la portada.
 - Unificar con el portal de Grupo Livon: primero inicio de sesión con Microsoft 365 (Entra ID ya está preparado), luego accesos directos y datos en el portal. La venta pública sigue separada.
+
+## 27/10/2026 · Entrada desde el portal de Grupo Livon
+- El portal (repo livon-portal) firma un pase JWT HS256 (emisor `portal-livon`, destinatario `taquilla`, 2 minutos, `jti` de un solo uso guardado en `pases_portal`) y lo manda en el fragmento `#portal=` de /entrar, que no llega a ningún registro de servidor.
+- Solo entra quien ya tenga usuario activo en la Taquilla: los roles por organizador siguen dándose en Equipo. No se crean usuarios desde el portal.
+- Si la persona entró al portal con Microsoft 365 (`mfa: true`), cuenta como verificación en dos pasos, igual que la entrada directa con Microsoft. Si entró con contraseña o código, la Taquilla pide su código TOTP.
+- Clave compartida: `PORTAL_SSO_SECRET` (Taquilla) = `TAQUILLA_SSO_SECRET` (portal), mínimo 32 caracteres.

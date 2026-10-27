@@ -12,6 +12,7 @@
 #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_CONNECT_WEBHOOK_SECRET
 #   COBRO_REAL               true (solo cuando las claves de Stripe sean las reales)
 #   TURNSTILE_SITE_KEY, TURNSTILE_SECRET (opcional, recomendado)
+#   PORTAL_SSO_SECRET        la misma clave que TAQUILLA_SSO_SECRET del portal de Grupo Livon (entrar desde el portal)
 name: taquilla
 
 services:
@@ -72,6 +73,8 @@ services:
       COBRO_REAL: ${COBRO_REAL:-false}
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
       TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      PORTAL_SSO_SECRET: ${PORTAL_SSO_SECRET:-}
+      PORTAL_URL: ${PORTAL_URL:-https://portal.grupolivon.com}
       ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
       ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
       ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
@@ -114,6 +117,8 @@ services:
       COBRO_REAL: ${COBRO_REAL:-false}
       TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
       TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+      PORTAL_SSO_SECRET: ${PORTAL_SSO_SECRET:-}
+      PORTAL_URL: ${PORTAL_URL:-https://portal.grupolivon.com}
       ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
       ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
       ENTRA_CLIENT_SECRET: ${ENTRA_CLIENT_SECRET:-}
