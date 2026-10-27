@@ -184,6 +184,22 @@
 
 ---
 
+## Portada, agenda, miniaturas y entradas con cartel (27/10/2026)
+
+**Terminado**
+- **Cabecera** fija con Cartelera, Agenda, Mis entradas, **buscador** e idioma; en el móvil, **menú hamburguesa**. El acceso del equipo pasa a un enlace discreto en el pie.
+- **Portada**: arreglado el fondo de la cabecera (se veía una franja); los botones «Descubrir eventos» y «Ver la agenda» y las tarjetas Música en vivo / Festivales / Espectáculos ya llevan a su sitio.
+- **Evento destacado**: en el panel, «Datos del evento» → «Destacar este evento» (+ imagen panorámica opcional, ideal 1920 × 800). Sale en grande bajo la cabecera.
+- **Categoría** de cada evento (Música, Espectáculos, Festival, Otros) para los filtros.
+- **Agenda** (/agenda): todas las próximas funciones por meses, con buscador (nombre, artista, lugar, isla) y filtros.
+- **WhatsApp y redes**: cada evento y función tiene su miniatura 1200 × 630 hecha con su cartel; la portada tiene una imagen propia. Icono de pestaña, icono de móvil, manifest, robots.txt y sitemap.xml.
+- **Entradas con cartel**: el cartel sale en el PDF, en el correo de confirmación y en la página de entradas del móvil.
+
+**Cómo probarlo**
+1. Abre la portada en el móvil: menú ☰ arriba a la derecha, busca «Tejina» y verás la función.
+2. Pega el enlace de una función en WhatsApp: debe salir la miniatura con el cartel.
+3. Compra una entrada de prueba: el correo y el PDF llevan el cartel.
+
 ## Crear eventos desde el panel (27/10/2026)
 
 **Terminado**: cualquier persona con rol Producción (o Administración) puede crear un evento entero sin JSON ni ayuda técnica.

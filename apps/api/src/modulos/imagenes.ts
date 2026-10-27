@@ -9,6 +9,7 @@ import type { Contexto } from '../contexto';
 import { exigir } from '../auth';
 import { auditar } from '../auditoria';
 import { invalido, noEncontrado } from '../errores';
+import { imagenParaCompartir, varianteImagen } from '../servicios/imagenes';
 
 export const MAX_IMAGEN = 5 * 1024 * 1024;
 
@@ -64,5 +65,35 @@ export async function rutasImagenes(app: FastifyInstance, ctx: Contexto) {
     reply.header('x-content-type-options', 'nosniff');
     reply.header('content-security-policy', "default-src 'none'");
     return reply.type(i.tipo).send(Buffer.isBuffer(i.bytes) ? i.bytes : Buffer.from(i.bytes as any));
+  });
+
+  const enviarJpeg = (reply: any, b: Buffer | null, horas = 24) => {
+    if (!b) throw noEncontrado('Imagen');
+    reply.header('cache-control', `public, max-age=${horas * 3600}`);
+    reply.header('x-content-type-options', 'nosniff');
+    return reply.type('image/jpeg').send(b);
+  };
+
+  // Variantes ligeras: «og» (1200×630 para WhatsApp y redes), «correo» (600 px) y «pdf».
+  app.get('/api/publico/imagenes/:id/:variante', async (req, reply) => {
+    const { id, variante } = z.object({ id: z.string().uuid(), variante: z.enum(['og', 'correo', 'pdf']) }).parse(req.params);
+    return enviarJpeg(reply, await varianteImagen(ctx, `/api/publico/imagenes/${id}`, variante), 24 * 365);
+  });
+
+  // Miniatura para compartir un evento o una función (las funciones sin imagen usan la del evento).
+  app.get('/api/publico/og/evento/:slug', async (req, reply) => {
+    const { slug } = z.object({ slug: z.string().max(80) }).parse(req.params);
+    const e = await ctx.db.one<any>('select imagen_url, imagen_tarjeta_url from eventos where slug = $1 and publicado', [slug]);
+    return enviarJpeg(reply, e ? await varianteImagen(ctx, imagenParaCompartir(e), 'og') : null);
+  });
+
+  app.get('/api/publico/og/funcion/:id', async (req, reply) => {
+    const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+    const f = await ctx.db.one<any>(
+      `select coalesce(f.imagen_tarjeta_url, e.imagen_tarjeta_url) as imagen_tarjeta_url, coalesce(f.imagen_url, e.imagen_url) as imagen_url
+         from funciones f join eventos e on e.id = f.evento_id and e.publicado where f.id = $1 and f.publicada`,
+      [id],
+    );
+    return enviarJpeg(reply, f ? await varianteImagen(ctx, imagenParaCompartir(f), 'og') : null);
   });
 }

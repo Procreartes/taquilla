@@ -26,6 +26,9 @@ const DatosEvento = z.object({
   descripcion: z.string().max(5000).nullable().optional(),
   imagen_url: IMAGEN.nullable().optional(),
   imagen_tarjeta_url: IMAGEN.nullable().optional(),
+  imagen_destacada_url: IMAGEN.nullable().optional(),
+  categoria: z.enum(['musica', 'festival', 'espectaculo', 'otros']).nullable().optional(),
+  destacado: z.boolean().optional(),
   publicado: z.boolean().optional(),
 });
 
@@ -212,8 +215,10 @@ export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
     const d = DatosEvento.parse(req.body);
     if (await ctx.db.one('select 1 from eventos where slug = $1', [d.slug])) throw conflicto('Ya existe un evento con esa dirección');
     return ctx.db.one(
-      `insert into eventos (organizador_id, slug, nombre, tipo, descripcion, imagen_url, imagen_tarjeta_url, publicado) values ($1, $2, $3, $4, $5, $6, $7, $8) returning *`,
-      [c.organizadorId, d.slug, d.nombre, d.tipo, d.descripcion ?? null, d.imagen_url ?? null, d.imagen_tarjeta_url ?? null, d.publicado ?? false],
+      `insert into eventos (organizador_id, slug, nombre, tipo, descripcion, imagen_url, imagen_tarjeta_url, imagen_destacada_url, categoria, destacado, publicado)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning *`,
+      [c.organizadorId, d.slug, d.nombre, d.tipo, d.descripcion ?? null, d.imagen_url ?? null, d.imagen_tarjeta_url ?? null,
+        d.imagen_destacada_url ?? null, d.categoria ?? null, d.destacado ?? false, d.publicado ?? false],
     );
   });
 

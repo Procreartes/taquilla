@@ -29,6 +29,18 @@ const TX = {
     prueba: '<b>TEST-Vorstellung:</b> Diese Tickets sind nicht echt.', asunto: 'Deine Tickets', motivo: 'Du erhältst diese E-Mail, weil du bei Taquilla Tickets für eine Veranstaltung von folgendem Veranstalter gekauft hast:', locale: 'de-DE' },
 };
 
+/** URL absoluta y ligera del cartel para el correo (las imágenes subidas se sirven en versión de 600 px). */
+export function urlImagenCorreo(cartel: string | null | undefined, urlPedido: string) {
+  if (!cartel) return null;
+  if (/^https:\/\//.test(cartel)) return cartel;
+  try {
+    const origen = new URL(urlPedido).origin;
+    return origen + (/^\/api\/publico\/imagenes\/[0-9a-f-]{36}$/.test(cartel) ? `${cartel}/correo` : cartel);
+  } catch {
+    return null;
+  }
+}
+
 export function correoConfirmacion(p: any, urlPedido: string) {
   const x = TX[(p.idioma as keyof typeof TX) in TX ? (p.idioma as keyof typeof TX) : 'es'];
   const fecha = (() => {
@@ -38,7 +50,9 @@ export function correoConfirmacion(p: any, urlPedido: string) {
   const prueba = p.es_prueba ? `<p style="background:#fcf1dd;border:1px solid #8a5608;padding:10px;border-radius:8px">${x.prueba}</p>` : '';
   const filas = p.entradas.map((e: any) => `<tr><td style="padding:6px 0;border-bottom:1px solid #eef1f6">${esc(e.descripcion)}</td><td style="padding:6px 0;border-bottom:1px solid #eef1f6;font-family:monospace">${esc(e.codigo)}</td><td style="padding:6px 0;border-bottom:1px solid #eef1f6;text-align:right">${eur(e.precio_cent)}</td></tr>`).join('');
   const { cuota } = desgloseImpuesto(p.total_cent, Number(p.impuesto_tipo));
-  const cuerpo = `${prueba}
+  const cartel = urlImagenCorreo(p.cartel_url, urlPedido);
+  const cuerpo = `${prueba}${cartel ? `
+<img src="${esc(cartel)}" alt="${esc(p.titulo)}" width="240" style="display:block;width:240px;max-width:100%;height:auto;border-radius:8px;margin:0 auto 18px">` : ''}
 <h1 style="font-size:22px;margin:0 0 6px">${x.listo}</h1>
 <p style="margin:0 0 16px;color:#4f596c">${x.pedido} <b>${esc(p.codigo)}</b></p>
 <h2 style="font-size:18px;margin:0">${esc(p.titulo)}</h2>

@@ -168,6 +168,7 @@ export async function resumenPedido(c: Consultor, pedidoId: string) {
             p.comprador_nombre, p.comprador_email, p.numero_factura, p.pagado_en, p.idioma, p.pasarela, p.pago_url,
             f.id as funcion_id, f.titulo, f.fecha, to_char(f.hora, 'HH24:MI') as hora, f.es_prueba, f.modo_venta,
             r.nombre as recinto_nombre, r.municipio, r.isla, e.nombre as evento_nombre, e.slug as evento_slug,
+            coalesce(f.imagen_url, e.imagen_url, f.imagen_tarjeta_url, e.imagen_tarjeta_url) as cartel_url,
             o.nombre as organizador_nombre, o.razon_social as organizador_razon_social, o.cif as organizador_cif, o.direccion_fiscal as organizador_direccion
        from pedidos p join funciones f on f.id = p.funcion_id join recintos r on r.id = f.recinto_id
        join eventos e on e.id = f.evento_id join organizadores o on o.id = p.organizador_id

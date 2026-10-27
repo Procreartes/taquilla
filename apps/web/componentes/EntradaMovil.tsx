@@ -44,7 +44,9 @@ export default function EntradaMovil({ token, entrada, funcion }: { token: strin
   }, [llave]);
 
   return (
-    <article className="panel stack" aria-label={`${funcion.titulo} · ${entrada.descripcion}`} style={{ alignItems: 'center', textAlign: 'center' }}>
+    <article className="panel stack" aria-label={`${funcion.titulo} · ${entrada.descripcion}`} style={{ alignItems: 'center', textAlign: 'center', overflow: 'hidden' }}>
+      {funcion.cartel_url && <img src={funcion.cartel_url} alt="" className="entrada-banda" />}
+      <p className="small muted" style={{ margin: 0 }}>{funcion.titulo}</p>
       <span className="tag">{entrada.zona_codigo}{entrada.tipo_butaca === 'silla_ruedas' ? ' · PMR' : ''}</span>
       <h3>{entrada.descripcion}</h3>
       {activa ? (

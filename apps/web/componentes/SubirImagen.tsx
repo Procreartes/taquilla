@@ -33,7 +33,7 @@ export default function SubirImagen({ etiqueta, ayuda, valor, onCambio, formato,
   ayuda: string;
   valor: string | null;
   onCambio: (url: string | null) => void;
-  formato: 'vertical' | 'cuadrada';
+  formato: 'vertical' | 'cuadrada' | 'panoramica';
   desactivado?: boolean;
 }) {
   const id = useId();
@@ -48,6 +48,7 @@ export default function SubirImagen({ etiqueta, ayuda, valor, onCambio, formato,
       const aviso =
         r.ancho && r.alto && formato === 'vertical' && r.ancho >= r.alto ? ' Ojo: no es vertical; el cartel se verá mejor en formato vertical.'
         : r.ancho && r.alto && formato === 'cuadrada' && r.alto > r.ancho * 1.1 ? ' Ojo: es vertical; para listados va mejor cuadrada o apaisada.'
+        : r.ancho && r.alto && formato === 'panoramica' && r.ancho < r.alto * 1.6 ? ' Ojo: para el destacado va mejor una imagen bien apaisada (por ejemplo 1920 × 800 px).'
         : '';
       setEstado({ tipo: 'ok', texto: `Imagen subida${r.ancho ? ` (${r.ancho} × ${r.alto} px)` : ''}.${aviso}` });
     } catch (err: any) {

@@ -38,16 +38,35 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
 
   app.get('/api/publico/eventos', async () =>
     ctx.db.query(
-      `select e.slug, e.nombre, e.tipo, e.imagen_url, e.imagen_tarjeta_url, e.es_prueba, min(f.fecha) as desde, max(f.fecha) as hasta, count(f.id)::int as funciones
-         from eventos e join funciones f on f.evento_id = e.id and f.publicada
+      `select e.slug, e.nombre, e.tipo, e.categoria, e.descripcion, e.imagen_url, e.imagen_tarjeta_url, e.imagen_destacada_url, e.destacado, e.es_prueba,
+              min(f.fecha) as desde, max(f.fecha) as hasta, count(f.id)::int as funciones,
+              case when count(f.id) = 1 then min(f.id::text) end as funcion_unica,
+              string_agg(distinct coalesce(r.municipio, r.nombre), ' · ') as lugares,
+              (array_remove(array_agg(coalesce(f.imagen_tarjeta_url, f.imagen_url) order by f.fecha), null))[1] as imagen_funcion
+         from eventos e join funciones f on f.evento_id = e.id and f.publicada and f.fecha >= current_date
+         join recintos r on r.id = f.recinto_id
         where e.publicado group by e.id order by min(f.fecha)`,
+    ),
+  );
+
+  // Agenda: todas las funciones futuras publicadas, con su evento (para buscar y filtrar).
+  app.get('/api/publico/agenda', async () =>
+    ctx.db.query(
+      `select ${CAMPOS_FUNCION_PUBLICA}, e.slug as evento_slug, e.nombre as evento_nombre, e.tipo as evento_tipo, e.categoria,
+              coalesce(f.imagen_tarjeta_url, e.imagen_tarjeta_url, f.imagen_url, e.imagen_url) as imagen,
+              (select min(precio_cent) from precios_funcion pf where pf.funcion_id = f.id) as precio_desde,
+              (select count(*)::int from precios_funcion pf where pf.funcion_id = f.id) as zonas_con_precio
+         from funciones f join recintos r on r.id = f.recinto_id join eventos e on e.id = f.evento_id and e.publicado
+         join organizadores o on o.id = e.organizador_id and o.activo
+        where f.publicada and f.fecha >= current_date and f.estado <> 'cancelada'
+        order by f.fecha, f.hora nulls last limit 500`,
     ),
   );
 
   app.get('/api/publico/eventos/:slug', async (req) => {
     const { slug } = z.object({ slug: z.string().max(80) }).parse(req.params);
     const e = await ctx.db.one(
-      `select e.id, e.slug, e.nombre, e.tipo, e.descripcion, e.imagen_url, e.imagen_tarjeta_url, e.datos->'islas' as islas, e.es_prueba,
+      `select e.id, e.slug, e.nombre, e.tipo, e.categoria, e.descripcion, e.imagen_url, e.imagen_tarjeta_url, e.imagen_destacada_url, e.datos->'islas' as islas, e.es_prueba,
               o.nombre as organizador_nombre, o.color_primario, o.logo_url, o.gastos_gestion_cent, o.gastos_gestion_pct
          from eventos e join organizadores o on o.id = e.organizador_id and o.activo where e.slug = $1 and e.publicado`,
       [slug],

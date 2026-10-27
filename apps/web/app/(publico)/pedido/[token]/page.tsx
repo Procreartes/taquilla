@@ -34,11 +34,14 @@ export default function Pedido({ params }: { params: Promise<{ token: string }> 
   if (error) return <p className="aviso bad" role="alert">{error}</p>;
   if (!p) return <p role="status">{t('cargando')}</p>;
   const cabecera = (
-    <header className="stack" style={{ gap: 4 }}>
+    <header className="pedido-cabecera">
+      {p.cartel_url && <img src={p.cartel_url} alt={`Cartel: ${p.titulo}`} className="pedido-cartel" />}
+      <div className="stack" style={{ gap: 4 }}>
       <p className="small muted">{t('paso', { n: 3 })} · {t('paso3')}</p>
       <h1>{p.estado === 'pagado' ? t('listo') : p.titulo}</h1>
       <p className="muted">{p.titulo} · <span className="capital">{fechaLarga(p.fecha, locale)}</span>{p.hora ? ` · ${p.hora}` : ''} · {p.recinto_nombre}</p>
       <p className="small">{t('pedido')} <b className="mono">{p.codigo}</b></p>
+      </div>
     </header>
   );
 

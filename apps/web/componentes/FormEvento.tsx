@@ -8,6 +8,9 @@ export type DatosEvento = {
   descripcion: string | null;
   imagen_url: string | null;
   imagen_tarjeta_url: string | null;
+  imagen_destacada_url: string | null;
+  categoria: 'musica' | 'festival' | 'espectaculo' | 'otros' | null;
+  destacado: boolean;
   publicado: boolean;
 };
 
@@ -27,6 +30,9 @@ export default function FormEvento({ inicial, boton, onGuardar, desactivado }: {
     descripcion: inicial?.descripcion ?? '',
     imagen_url: inicial?.imagen_url ?? null,
     imagen_tarjeta_url: inicial?.imagen_tarjeta_url ?? null,
+    imagen_destacada_url: inicial?.imagen_destacada_url ?? null,
+    categoria: inicial?.categoria ?? null,
+    destacado: inicial?.destacado ?? false,
     publicado: inicial?.publicado ?? false,
   });
   const [ocupado, setOcupado] = useState(false);
@@ -50,6 +56,15 @@ export default function FormEvento({ inicial, boton, onGuardar, desactivado }: {
           </select>
         </label>
       </div>
+      <label className="campo">Categoría<span className="ayuda">Para los filtros de la portada (Música en vivo, Festivales, Espectáculos). Un evento de tipo «Festival» sale también en Festivales.</span>
+        <select value={d.categoria ?? ''} disabled={desactivado} onChange={(e) => cambiar({ categoria: (e.target.value || null) as DatosEvento['categoria'] })}>
+          <option value="">— Sin categoría —</option>
+          <option value="musica">Música en vivo (conciertos)</option>
+          <option value="espectaculo">Espectáculos (magia, humor, teatro)</option>
+          <option value="festival">Festival</option>
+          <option value="otros">Otros</option>
+        </select>
+      </label>
       <label className="campo">Descripción<span className="ayuda">Opcional. Se muestra en la página del evento.</span>
         <textarea rows={4} maxLength={5000} value={d.descripcion ?? ''} disabled={desactivado} onChange={(e) => cambiar({ descripcion: e.target.value })} />
       </label>
@@ -61,6 +76,18 @@ export default function FormEvento({ inicial, boton, onGuardar, desactivado }: {
           ayuda="Se ve en la portada y en las tarjetas. Ideal 1200 × 1200 px. Si falta, se usa el cartel."
           valor={d.imagen_tarjeta_url} onCambio={(u) => cambiar({ imagen_tarjeta_url: u })} />
       </div>
+      <fieldset className="panel stack" style={{ gap: 10 }}>
+        <legend style={{ fontWeight: 700 }}>Evento destacado en la portada</legend>
+        <label className="check">
+          <input type="checkbox" checked={d.destacado} disabled={desactivado} onChange={(e) => cambiar({ destacado: e.target.checked })} />
+          <span>Destacar este evento<br /><span className="small muted">Sale en grande debajo de la cabecera. Si hay varios destacados, se muestra el más próximo.</span></span>
+        </label>
+        {d.destacado && (
+          <SubirImagen etiqueta="Imagen panorámica para el destacado (opcional)" formato="panoramica" desactivado={desactivado}
+            ayuda="Imagen ancha sin texto importante en los bordes. Ideal 1920 × 800 px. Si no la pones, se muestra el cartel."
+            valor={d.imagen_destacada_url} onCambio={(u) => cambiar({ imagen_destacada_url: u })} />
+        )}
+      </fieldset>
       <label className="check">
         <input type="checkbox" checked={d.publicado} disabled={desactivado} onChange={(e) => cambiar({ publicado: e.target.checked })} />
         <span>Publicado en la web<br /><span className="small muted">Mientras no lo marques, el evento no aparece en la portada aunque tenga funciones.</span></span>
