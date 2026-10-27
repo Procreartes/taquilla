@@ -166,3 +166,10 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 - Solo entra quien ya tenga usuario activo en la Taquilla: los roles por organizador siguen dándose en Equipo. No se crean usuarios desde el portal.
 - Si la persona entró al portal con Microsoft 365 (`mfa: true`), cuenta como verificación en dos pasos, igual que la entrada directa con Microsoft. Si entró con contraseña o código, la Taquilla pide su código TOTP.
 - Clave compartida: `PORTAL_SSO_SECRET` (Taquilla) = `TAQUILLA_SSO_SECRET` (portal), mínimo 32 caracteres.
+
+## 27/10/2026 · Taquilla → Contabilidad (Livon Gestión)
+- Decidido con Naroe: **un ingreso por función**. La Taquilla expone `GET /api/integracion/contabilidad` (JWT HS256 del portal, destinatario `taquilla-contabilidad`) y el portal, que ya habla con Livon Gestión por la red interna, lo pasa cada hora a «otros movimientos».
+- Ingreso categoría `taquilla` = **base imponible** (cobrado − devoluciones, sin el impuesto), marcado como cobrado; gasto `bancario` = comisiones de Stripe. Referencias fijas `TAQ-F-<función>` / `TAQ-C-<función>`: repetible, solo actualiza lo que cambia; las devoluciones entran como cobro negativo.
+- Funciones futuras como `previsto`; desde el día de la función, `reconocido`.
+- La sociedad se busca por el CIF del organizador; el proyecto, por el «Código de proyecto» del evento (si falta, el ingreso entra sin proyecto).
+- Las facturas simplificadas se quedan en la Taquilla (no se duplican en Livon Gestión).

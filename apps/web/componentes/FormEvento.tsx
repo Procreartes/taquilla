@@ -11,6 +11,7 @@ export type DatosEvento = {
   imagen_destacada_url: string | null;
   categoria: 'musica' | 'festival' | 'espectaculo' | 'otros' | null;
   destacado: boolean;
+  codigo_proyecto: string | null;
   publicado: boolean;
 };
 
@@ -33,6 +34,7 @@ export default function FormEvento({ inicial, boton, onGuardar, desactivado }: {
     imagen_destacada_url: inicial?.imagen_destacada_url ?? null,
     categoria: inicial?.categoria ?? null,
     destacado: inicial?.destacado ?? false,
+    codigo_proyecto: inicial?.codigo_proyecto ?? '',
     publicado: inicial?.publicado ?? false,
   });
   const [ocupado, setOcupado] = useState(false);
@@ -42,7 +44,7 @@ export default function FormEvento({ inicial, boton, onGuardar, desactivado }: {
     <form className="stack" onSubmit={async (e) => {
       e.preventDefault();
       setOcupado(true);
-      try { await onGuardar({ ...d, descripcion: d.descripcion?.trim() || null }); } finally { setOcupado(false); }
+      try { await onGuardar({ ...d, descripcion: d.descripcion?.trim() || null, codigo_proyecto: d.codigo_proyecto?.trim() || null }); } finally { setOcupado(false); }
     }}>
       <div className="g2">
         <label className="campo">Nombre del evento
@@ -64,6 +66,10 @@ export default function FormEvento({ inicial, boton, onGuardar, desactivado }: {
           <option value="festival">Festival</option>
           <option value="otros">Otros</option>
         </select>
+      </label>
+      <label className="campo">Código de proyecto (contabilidad)
+        <span className="ayuda">El mismo código que en ClickUp y en Contabilidad (por ejemplo «P26-ASOMBRA»). Con él, lo vendido en cada función entra solo como ingreso de taquilla del proyecto. Si lo dejas vacío, el ingreso entra igual en la sociedad, sin proyecto.</span>
+        <input value={d.codigo_proyecto ?? ''} maxLength={40} pattern="[A-Za-z0-9._\-]{1,40}" disabled={desactivado} onChange={(e) => cambiar({ codigo_proyecto: e.target.value })} style={{ maxWidth: 260 }} />
       </label>
       <label className="campo">Descripción<span className="ayuda">Opcional. Se muestra en la página del evento.</span>
         <textarea rows={4} maxLength={5000} value={d.descripcion ?? ''} disabled={desactivado} onChange={(e) => cambiar({ descripcion: e.target.value })} />
