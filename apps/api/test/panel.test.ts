@@ -163,4 +163,24 @@ describe('fase 6 · panel y dinero', () => {
     expect((await t.get(`/api/panel/eventos/${EVENTO}/publico`)).statusCode).toBe(404);
     expect((await t.get(`/api/panel/funciones/${F.t01}/exportar`)).statusCode).toBe(404);
   });
+
+  it('resumen del panel: cifras, ventas por día, próximas funciones y dinero solo para quien ve informes', async () => {
+    const g = await m.cliente().entrar('gerencia@asombra.test');
+    const r = (await g.get('/api/panel/resumen?pruebas=1')).datos;
+    expect(r.entradas.vendidas).toBeGreaterThanOrEqual(3);
+    expect(r.serie).toHaveLength(30);
+    expect(r.serie.at(-1).entradas).toBeGreaterThanOrEqual(3);
+    expect(r.dinero.cobrado).toBeGreaterThan(0);
+    expect(r.dinero.neto).toBeLessThanOrEqual(r.dinero.cobrado);
+    const t01 = r.proximas.find((f: any) => f.id === F.t01);
+    if (t01) expect(t01.vendidas).toBeGreaterThan(0);
+    expect(r.ultimos.length).toBeGreaterThan(0);
+    const p = await m.cliente().entrar('puerta@taquilla.test');
+    const rp = (await p.get('/api/panel/resumen?pruebas=1'));
+    if (rp.statusCode === 200) {
+      expect(rp.datos.dinero).toBeNull();
+      expect(rp.datos.ultimos).toEqual([]);
+      expect(rp.datos.serie.every((d: any) => d.cobrado === null)).toBe(true);
+    } else expect(rp.statusCode).toBe(403);
+  });
 });
