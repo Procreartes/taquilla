@@ -58,6 +58,9 @@ const Esquema = z.object({
   TURNSTILE_SECRET: opcional,
   TURNSTILE_SITE_KEY: opcional,
   // Microsoft Entra ID (Microsoft 365) para el equipo interno
+  // Entrada desde el portal de Grupo Livon (pase firmado HS256; misma clave que TAQUILLA_SSO_SECRET del portal)
+  PORTAL_SSO_SECRET: z.preprocess(vacioAUndefined, z.string().min(32, 'PORTAL_SSO_SECRET: mínimo 32 caracteres').optional()),
+  PORTAL_URL: z.string().url().default('https://portal.grupolivon.com'),
   ENTRA_TENANT_ID: opcional,
   ENTRA_CLIENT_ID: opcional,
   ENTRA_CLIENT_SECRET: opcional,
