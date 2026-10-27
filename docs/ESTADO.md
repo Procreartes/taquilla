@@ -184,6 +184,18 @@
 
 ---
 
+## Crear eventos desde el panel (27/10/2026)
+
+**Terminado**: cualquier persona con rol Producción (o Administración) puede crear un evento entero sin JSON ni ayuda técnica.
+
+- **Imágenes**: cada evento (y si se quiere, cada función) tiene dos: el **cartel vertical** (ficha de compra) y la **imagen para listados** cuadrada o apaisada (portada y tarjetas). Si falta una se usa la otra; una función sin imágenes usa las del evento. Se suben desde el ordenador o el móvil (JPG, PNG o WebP, hasta 5 MB; las fotos enormes se reducen solas) y se guardan en la propia plataforma.
+- **Cómo se hace, paso a paso**:
+  1. Panel → **Eventos** → **+ Nuevo evento**: nombre, tipo, descripción, cartel e imagen para listados. Marca «Publicado en la web» cuando quieras que salga en la portada. Pulsa «Crear evento y seguir».
+  2. Aparece **Nueva función**: título, fecha, hora, recinto, tipo de venta (butaca numerada con plano, entrada general con aforo, o gratis), precio (igual para todas las zonas) y, si la venta oficial es en otra web, su enlace. Pulsa «Crear función».
+  3. Se abre la función en **borrador**: revisa precios por zona, invitaciones y acreditaciones, bloqueos de taquilla, y pulsa **Poner a la venta**.
+  4. Para cambiar algo después: en el evento, «Datos del evento e imágenes»; en la función, «Datos de la función e imágenes». Con entradas vendidas no se puede cambiar el recinto ni el tipo de venta.
+- Si el recinto no existe, se crea antes en **Recintos y planos**.
+
 ## Para Naroe
 
 ### 1. Arrancarlo en tu ordenador (un solo comando)

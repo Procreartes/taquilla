@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { api, fechaCorta } from '@/lib/api';
+import { api, ErrorApi, fechaCorta } from '@/lib/api';
 import { useSesion } from '@/lib/sesion';
+import FormEvento, { slugDe, type DatosEvento } from '@/componentes/FormEvento';
 
 type Evento = { id: string; slug: string; nombre: string; tipo: string; funciones: number; a_la_venta: number; desde: string | null; hasta: string | null; es_prueba: boolean };
 
@@ -10,6 +12,24 @@ export default function Eventos() {
   const { puede } = useSesion();
   const [lista, setLista] = useState<Evento[]>([]);
   const [msg, setMsg] = useState<{ tipo: string; texto: string } | null>(null);
+  const [nuevo, setNuevo] = useState(false);
+  const router = useRouter();
+  const crear = async (d: DatosEvento) => {
+    setMsg(null);
+    const s = slugDe(d.nombre);
+    const base = s.length >= 2 ? s : 'evento';
+    // Si el enlace ya existe, prueba con -2, -3…
+    for (let i = 1; i <= 20; i++) {
+      try {
+        const e = await api<{ id: string }>('/api/eventos', { cuerpo: { ...d, slug: i === 1 ? base : `${base.slice(0, 76)}-${i}` } });
+        router.push(`/panel/eventos/${e.id}?nuevo=1`);
+        return;
+      } catch (err: any) {
+        if (!(err instanceof ErrorApi && err.status === 409)) { setMsg({ tipo: 'bad', texto: err.message }); return; }
+      }
+    }
+    setMsg({ tipo: 'bad', texto: 'Ya hay demasiados eventos con ese nombre: cámbialo un poco.' });
+  };
   const cargar = () => api<Evento[]>('/api/eventos').then(setLista);
   useEffect(() => {
     cargar();
@@ -33,7 +53,18 @@ export default function Eventos() {
 
   return (
     <div className="stack">
-      <h1>Eventos</h1>
+      <div className="fila" style={{ justifyContent: 'space-between' }}>
+        <h1>Eventos</h1>
+        {puede('eventos.editar') && !nuevo && <button className="btn" onClick={() => setNuevo(true)}>+ Nuevo evento</button>}
+      </div>
+      {nuevo && (
+        <section className="panel stack">
+          <h2>Nuevo evento</h2>
+          <p className="small muted">Paso 1 de 2: los datos generales y las imágenes. Después añadirás las funciones (fecha, recinto, plano y precio).</p>
+          <FormEvento boton="Crear evento y seguir" onGuardar={crear} />
+          <div><button type="button" className="btn sec sm" onClick={() => setNuevo(false)}>Cancelar</button></div>
+        </section>
+      )}
       <div className="rejilla">
         {lista.map((e) => (
           <Link key={e.id} href={`/panel/eventos/${e.id}`} className="panel" style={{ textDecoration: 'none', color: 'inherit' }}>

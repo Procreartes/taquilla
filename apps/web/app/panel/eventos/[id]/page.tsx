@@ -1,7 +1,10 @@
 'use client';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { api, eur, fechaCorta } from '@/lib/api';
+import FormEvento from '@/componentes/FormEvento';
+import FormFuncion, { type DatosFuncion } from '@/componentes/FormFuncion';
 import { useSesion } from '@/lib/sesion';
 import { ESTADO_FUNCION, MODO_VENTA } from '@/lib/textos';
 
@@ -13,6 +16,10 @@ export default function Evento({ params }: { params: Promise<{ id: string }> }) 
   const [e, setE] = useState<any>(null);
   const [socios, setSocios] = useState<Socio[]>([]);
   const [msg, setMsg] = useState<{ tipo: string; texto: string } | null>(null);
+  const [msgDatos, setMsgDatos] = useState<{ tipo: string; texto: string } | null>(null);
+  const esNuevo = useSearchParams().get('nuevo') === '1';
+  const [nuevaFuncion, setNuevaFuncion] = useState(false);
+  const router = useRouter();
   const cargar = () => api(`/api/eventos/${id}`).then((d) => {
     setE(d);
     setSocios(d.socios);
@@ -21,6 +28,27 @@ export default function Evento({ params }: { params: Promise<{ id: string }> }) 
     cargar();
   }, [id]);
   if (!e) return <p role="status">Cargando…</p>;
+
+  const guardarDatos = async (d: any) => {
+    setMsgDatos(null);
+    try {
+      const r = await api(`/api/eventos/${id}`, { metodo: 'PATCH', cuerpo: d });
+      setE({ ...e, ...r });
+      setMsgDatos({ tipo: 'ok', texto: 'Datos del evento guardados.' });
+    } catch (err: any) {
+      setMsgDatos({ tipo: 'bad', texto: err.message });
+    }
+  };
+
+  const crearFuncion = async (d: DatosFuncion, precioCent: number | null) => {
+    const codigo = `${d.fecha.replaceAll('-', '')}-${(d.hora ?? '').replace(':', '') || 'x'}-${Math.random().toString(36).slice(2, 6)}`;
+    const f = await api<{ id: string }>(`/api/eventos/${id}/funciones`, { cuerpo: { ...d, codigo } });
+    if (precioCent !== null) {
+      const det = await api<{ zonas: { codigo: string }[] }>(`/api/funciones/${f.id}`);
+      await api(`/api/funciones/${f.id}/precios`, { metodo: 'PUT', cuerpo: { precios: Object.fromEntries(det.zonas.map((z) => [z.codigo, precioCent])) } });
+    }
+    router.push(`/panel/funciones/${f.id}?nueva=1`);
+  };
   const islas: Record<string, { nombre: string; colores: { acento: string } }> = Object.fromEntries((e.datos?.islas ?? []).map((i: any) => [i.id, i]));
   const suma = socios.reduce((s, x) => s + Number(x.porcentaje || 0), 0);
 
@@ -47,6 +75,14 @@ export default function Evento({ params }: { params: Promise<{ id: string }> }) 
       <p><Link href="/panel/eventos">← Eventos</Link></p>
       <h1>{e.nombre}</h1>
       {e.datos?.fuente && <p className="small muted">Fuente de la programación: {e.datos.fuente}</p>}
+      {esNuevo && !e.funciones.length && <p className="aviso ok" role="status">Evento creado. Ahora añade la primera función: fecha, recinto, plano y precio.</p>}
+      <details className="panel" open={false}>
+        <summary><b>Datos del evento e imágenes</b> <span className="small muted">· {e.publicado ? 'publicado en la web' : 'sin publicar'}</span></summary>
+        <div style={{ marginTop: 12 }}>
+          <FormEvento inicial={e} boton="Guardar datos del evento" onGuardar={guardarDatos} desactivado={!puede('eventos.editar')} />
+          {msgDatos && <p className={`aviso ${msgDatos.tipo}`} role="status">{msgDatos.texto}</p>}
+        </div>
+      </details>
       {puede('informes.ver') && <div><Link className="btn sec sm" href={`/panel/eventos/${id}/informe`}>Informe del festival · liquidación · público</Link></div>}
       <div className="panel desliza">
         <table className="tabla">
@@ -72,7 +108,21 @@ export default function Evento({ params }: { params: Promise<{ id: string }> }) 
             ))}
           </tbody>
         </table>
+        {!e.funciones.length && <p className="vacio">Este evento aún no tiene funciones.</p>}
       </div>
+      {puede('eventos.editar') && (
+        nuevaFuncion || (esNuevo && !e.funciones.length) ? (
+          <section className="panel stack">
+            <h2>Nueva función</h2>
+            <p className="small muted">Una función es una fecha y hora concretas en un recinto. Se crea en borrador: revisa precios, invitaciones y acreditaciones, y luego pulsa «Poner a la venta».</p>
+            <FormFuncion conPrecio boton="Crear función" onGuardar={crearFuncion}
+              inicial={{ titulo: e.nombre, imagen_url: null, imagen_tarjeta_url: null }} />
+            <div><button type="button" className="btn sec sm" onClick={() => { setNuevaFuncion(false); if (esNuevo) router.replace(`/panel/eventos/${id}`); }}>Cancelar</button></div>
+          </section>
+        ) : (
+          <div><button className="btn" onClick={() => setNuevaFuncion(true)}>+ Añadir función</button></div>
+        )
+      )}
 
       <form className="panel stack" onSubmit={guardarSocios}>
         <h2>Coproducción · reparto de la liquidación</h2>

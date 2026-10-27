@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { api, fechaCorta } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 
-type Evento = { slug: string; nombre: string; tipo: string; desde: string; hasta: string; funciones: number; imagen_url?: string | null };
+type Evento = { slug: string; nombre: string; tipo: string; desde: string; hasta: string; funciones: number; imagen_url?: string | null; imagen_tarjeta_url?: string | null };
 
 export default function Inicio() {
   const { t, locale } = useT();
@@ -39,7 +39,8 @@ export default function Inicio() {
         <div className="rejilla">
           {eventos.map((e) => (
             <Link key={e.slug} href={`/e/${e.slug}`} className="panel" style={{ textDecoration: 'none', color: 'inherit' }}>
-              {e.imagen_url && <img src={e.imagen_url} alt="" loading="lazy" width={1024} height={1536} style={{ width: '100%', height: 'auto', borderRadius: 8, marginBottom: 8 }} />}
+              {e.imagen_tarjeta_url ? <img src={e.imagen_tarjeta_url} alt="" loading="lazy" className="tarjeta-img" />
+                : e.imagen_url && <img src={e.imagen_url} alt="" loading="lazy" className="tarjeta-cartel" />}
               <span className="tag">{e.tipo}</span>
               <h2 style={{ marginTop: 8 }}>{e.nombre}</h2>
               <p className="small muted">{fechaCorta(e.desde, locale)} – {fechaCorta(e.hasta, locale)} · {e.funciones}</p>
