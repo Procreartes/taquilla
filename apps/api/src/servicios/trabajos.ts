@@ -3,6 +3,7 @@ import type { Contexto } from '../contexto';
 import { correoCancelacion, correoConfirmacion, correoConflicto } from './plantillas';
 import { devolverEntradas } from './dinero';
 import { encolarWebhooks, entregarWebhook } from './webhooks';
+import { enviarCompraMeta } from './meta';
 import { ejecutarDevolucionesPendientes, enlacePedido, resumenPedido } from './venta';
 
 export type Adjuntador = (ctx: Contexto, pedido: any) => Promise<{ nombre: string; tipo: string; contenido: Buffer }[]>;
@@ -55,5 +56,8 @@ export function registrarTrabajos(ctx: Contexto) {
   ctx.colas.registrar('pago.devolver_pendientes', ({ pedidoId }) => ejecutarDevolucionesPendientes(ctx, pedidoId));
   ctx.colas.registrar('webhook.saliente', (d) => encolarWebhooks(ctx, d));
   ctx.colas.registrar('webhook.entregar', ({ entregaId }) => entregarWebhook(ctx, entregaId));
+  ctx.colas.registrar('meta.compra', async ({ pedidoId }) => {
+    await enviarCompraMeta(ctx, pedidoId);
+  });
   for (const [n, fn] of manejadoresExtra) ctx.colas.registrar(n, (d) => fn(ctx, d));
 }

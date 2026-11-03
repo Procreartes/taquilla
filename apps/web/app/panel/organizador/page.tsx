@@ -37,6 +37,8 @@ export default function DatosOrganizador() {
           gastos_gestion_cent: Number(o.gastos_gestion_cent),
           gastos_gestion_pct: o.gastos_gestion_pct === '' || o.gastos_gestion_pct === null || o.gastos_gestion_pct === undefined ? null : Number(o.gastos_gestion_pct),
           max_entradas_pedido: Number(o.max_entradas_pedido),
+          meta_pixel_id: vacio(String(o.meta_pixel_id ?? '').trim()),
+          meta_codigo_prueba: vacio(String(o.meta_codigo_prueba ?? '').trim()),
         },
       });
       setOrg(r);
@@ -94,8 +96,52 @@ export default function DatosOrganizador() {
         <p className="small muted">Cada organizador cobra sus ventas en su propia cuenta de Stripe; la plataforma se queda los gastos de gestión. Solo modo de prueba.</p>
         <div><button type="button" className="btn sec sm" onClick={async () => { try { const r = await api('/api/organizador/stripe/conectar', { cuerpo: {} }); window.location.href = r.url; } catch (e: any) { setMsg({ tipo: 'bad', texto: e.message }); } }}>{org.stripe_cuenta_id ? 'Continuar el alta en Stripe' : 'Conectar con Stripe'}</button></div>
       </section>
+      <MetaPixel org={org} set={set} onMsg={setMsg} />
       {msg && <p className={`aviso ${msg.tipo}`} role="status">{msg.texto}</p>}
       <div><button className="btn">Guardar cambios</button></div>
     </form>
+  );
+}
+
+function MetaPixel({ org, set, onMsg }: { org: Org; set: (k: string, v: unknown) => void; onMsg: (m: { tipo: string; texto: string }) => void }) {
+  const [token, setToken] = useState('');
+  const guardarToken = async (valor: string | null) => {
+    try {
+      const r = await api('/api/organizador/meta-token', { metodo: 'PUT', cuerpo: { token: valor } });
+      set('meta_capi_activa', r.meta_capi_activa);
+      setToken('');
+      onMsg({ tipo: 'ok', texto: valor ? 'Token de Meta guardado.' : 'Token de Meta borrado.' });
+    } catch (e: any) {
+      onMsg({ tipo: 'bad', texto: e.message });
+    }
+  };
+  return (
+    <section className="panel stack" aria-labelledby="meta-titulo">
+      <h2 id="meta-titulo">Meta (Facebook e Instagram)</h2>
+      <p className="small muted">
+        Con el ID del píxel, las páginas de tus eventos miden visitas, inicios de compra y compras para tus anuncios.
+        Con el token, además, cada compra se manda desde el servidor (API de Conversiones) y no se pierde por los bloqueadores.
+        Todo se activa solo si el comprador acepta las cookies de medición.
+      </p>
+      <div className="g2">
+        <label className="campo">ID del píxel (conjunto de datos)
+          <input inputMode="numeric" autoComplete="off" value={org.meta_pixel_id ?? ''} onChange={(e) => set('meta_pixel_id', e.target.value)} aria-describedby="meta-id-ayuda" />
+          <span id="meta-id-ayuda" className="small muted">Administrador de eventos → Orígenes de datos → tu píxel. Solo números.</span>
+        </label>
+        <label className="campo">Código de prueba (opcional)
+          <input autoComplete="off" value={org.meta_codigo_prueba ?? ''} onChange={(e) => set('meta_codigo_prueba', e.target.value)} aria-describedby="meta-prueba-ayuda" />
+          <span id="meta-prueba-ayuda" className="small muted">Pestaña «Probar eventos» (empieza por TEST). Bórralo cuando termines de probar.</span>
+        </label>
+      </div>
+      <p className="small">API de Conversiones: <b>{org.meta_capi_activa ? 'token guardado' : 'sin token'}</b></p>
+      <div className="fila" style={{ gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <label className="campo" style={{ flex: '1 1 320px' }}>Token de acceso de la API de Conversiones
+          <input type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} placeholder={org.meta_capi_activa ? '•••••••• (guardado; escribe uno nuevo para cambiarlo)' : ''} />
+        </label>
+        <button type="button" className="btn sec sm" disabled={!token.trim()} onClick={() => guardarToken(token.trim())}>Guardar token</button>
+        {org.meta_capi_activa && <button type="button" className="btn sec sm" onClick={() => guardarToken(null)}>Borrar token</button>}
+      </div>
+      <p className="small muted">El token se guarda cifrado y no se vuelve a mostrar. Se genera en el píxel → Configuración → API de Conversiones → «Generar token de acceso». El ID y el código de prueba se guardan con «Guardar cambios».</p>
+    </section>
   );
 }

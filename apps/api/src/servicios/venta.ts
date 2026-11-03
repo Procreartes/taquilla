@@ -169,7 +169,8 @@ export async function resumenPedido(c: Consultor, pedidoId: string) {
             f.id as funcion_id, f.titulo, f.fecha, to_char(f.hora, 'HH24:MI') as hora, f.es_prueba, f.modo_venta,
             r.nombre as recinto_nombre, r.municipio, r.isla, e.nombre as evento_nombre, e.slug as evento_slug,
             coalesce(f.imagen_url, e.imagen_url, f.imagen_tarjeta_url, e.imagen_tarjeta_url) as cartel_url,
-            o.nombre as organizador_nombre, o.razon_social as organizador_razon_social, o.cif as organizador_cif, o.direccion_fiscal as organizador_direccion
+            o.nombre as organizador_nombre, o.razon_social as organizador_razon_social, o.cif as organizador_cif, o.direccion_fiscal as organizador_direccion,
+            o.meta_pixel_id
        from pedidos p join funciones f on f.id = p.funcion_id join recintos r on r.id = f.recinto_id
        join eventos e on e.id = f.evento_id join organizadores o on o.id = p.organizador_id
       where p.id = $1`,
@@ -192,11 +193,11 @@ export interface DatosComprador {
   municipio?: string | null;
   isla?: string | null;
   idioma: string;
-  consentimientos: { condiciones: boolean; privacidad: boolean; comunicacionesOrganizador?: boolean; comunicacionesPlataforma?: boolean };
+  consentimientos: { condiciones: boolean; privacidad: boolean; comunicacionesOrganizador?: boolean; comunicacionesPlataforma?: boolean; medicion?: boolean };
 }
 
 /** Guarda los datos del comprador, alarga la reserva y abre la sesión de pago. */
-export async function prepararPago(ctx: Contexto, token: string, d: DatosComprador) {
+export async function prepararPago(ctx: Contexto, token: string, d: DatosComprador, metaAtribucion: Record<string, string | undefined> | null = null) {
   if (!d.consentimientos.condiciones || !d.consentimientos.privacidad) throw invalido('Para comprar tienes que aceptar las condiciones de compra y la política de privacidad');
   const pedidoId = await pedidoPorToken(ctx.db, token);
   const p = await ctx.db.one<any>(
@@ -235,10 +236,11 @@ export async function prepararPago(ctx: Contexto, token: string, d: DatosComprad
   await ctx.db.query(
     `update pedidos set estado = 'pago', expira_en = $2, comprador_nombre = $3, comprador_email = $4, comprador_telefono = $5, codigo_postal = $6,
             pais = $7, municipio = $8, isla = $9, idioma = $10, consentimientos = $11, pasarela = $12, pago_sesion_id = $13, pago_url = $14,
-            cuenta_conectada = $15, actualizado_en = now()
+            cuenta_conectada = $15, meta_atribucion = $16, actualizado_en = now()
       where id = $1`,
     [pedidoId, new Date(Date.now() + ttl), d.nombre, d.email.toLowerCase(), d.telefono ?? null, d.codigoPostal ?? null, d.pais ?? null, d.municipio ?? null,
-      d.isla ?? null, d.idioma, JSON.stringify({ ...d.consentimientos, fecha: new Date().toISOString() }), ctx.pasarela.nombre, sesion.id, sesion.url, p.stripe_cuenta_id],
+      d.isla ?? null, d.idioma, JSON.stringify({ ...d.consentimientos, fecha: new Date().toISOString() }), ctx.pasarela.nombre, sesion.id, sesion.url, p.stripe_cuenta_id,
+      metaAtribucion ? JSON.stringify(metaAtribucion) : null],
   );
   return { url: sesion.url };
 }
@@ -263,7 +265,7 @@ export async function cancelarReserva(ctx: Contexto, token: string) {
 /** Marca el pedido como caducado/cancelado (si aún no está pagado) y libera sus plazas. */
 export async function caducarPedido(ctx: Contexto, pedidoId: string, estado: 'caducado' | 'cancelado' = 'caducado') {
   const p = await ctx.db.one<any>(
-    `update pedidos set estado = $2, actualizado_en = now() where id = $1 and estado in ('reserva', 'pago')
+    `update pedidos set estado = $2, meta_atribucion = null, actualizado_en = now() where id = $1 and estado in ('reserva', 'pago')
      returning funcion_id, pago_sesion_id, cuenta_conectada`,
     [pedidoId, estado],
   );
@@ -386,6 +388,7 @@ async function despuesDeEmitir(ctx: Contexto, e: ResultadoEmision) {
   if (e.resultado === 'emitido') {
     await ctx.colas.encolar('correo.confirmacion', { pedidoId: e.pedidoId });
     await ctx.colas.encolar('webhook.saliente', { tipo: 'venta', pedidoId: e.pedidoId }).catch(() => {});
+    await ctx.colas.encolar('meta.compra', { pedidoId: e.pedidoId }).catch(() => {});
     if (e.agotada) await ctx.colas.encolar('webhook.saliente', { tipo: 'agotado', funcionId: e.funcionId }).catch(() => {});
   } else {
     await ctx.colas.encolar('pago.devolver_pendientes', { pedidoId: e.pedidoId });

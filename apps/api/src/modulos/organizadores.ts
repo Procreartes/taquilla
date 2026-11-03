@@ -5,7 +5,7 @@ import type { Contexto } from '../contexto';
 import { exigir, exigirSuperadmin, sesionCompleta } from '../auth';
 import { auditar } from '../auditoria';
 import { ErrorHttp, conflicto, noEncontrado } from '../errores';
-import { sha256, tokenAleatorio } from '../infra/cripto';
+import { cifrar, sha256, tokenAleatorio } from '../infra/cripto';
 
 const COLOR = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const TEXTOS_LEGALES = z.record(z.string().max(10), z.record(z.string().max(40), z.string().max(50_000)));
@@ -27,11 +27,14 @@ export const DatosOrganizador = z.object({
   gastos_gestion_pct: z.number().min(0).max(50).nullable().optional(),
   max_entradas_pedido: z.number().int().min(1).max(50).optional(),
   textos_legales: TEXTOS_LEGALES.optional(),
+  meta_pixel_id: z.string().regex(/^[0-9]{6,20}$/, 'El ID del píxel de Meta son solo números').nullable().optional(),
+  meta_codigo_prueba: z.string().regex(/^[A-Za-z0-9_-]{2,40}$/, 'Código de prueba de Meta no válido').nullable().optional(),
 });
 
 const CAMPOS_PUBLICOS = `id, slug, nombre, razon_social, cif, direccion_fiscal, email_contacto, telefono, logo_url,
   color_primario, color_secundario, stripe_cuenta_id, stripe_estado, impuesto_nombre, impuesto_tipo,
-  impuesto_pendiente, gastos_gestion_cent, gastos_gestion_pct, max_entradas_pedido, textos_legales, es_prueba, creado_en`;
+  impuesto_pendiente, gastos_gestion_cent, gastos_gestion_pct, max_entradas_pedido, textos_legales, es_prueba, creado_en,
+  meta_pixel_id, meta_codigo_prueba, (meta_capi_token_cifrado is not null) as meta_capi_activa`;
 
 /** Instrucciones para quien controla el acceso con la app de puerta (se añaden a su invitación). */
 export const instruccionesPuertaTexto = (url: string) => `Cómo validar las entradas el día del evento:
@@ -63,6 +66,15 @@ export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
       await auditar(t, { organizadorId: c.organizadorId, usuarioId: c.usuarioId, accion: 'organizador.editar', entidad: 'organizador', entidadId: c.organizadorId, datos: { antes, despues: datos }, ip: req.ip });
       return r;
     });
+  });
+
+  // ---- Meta: token de la API de Conversiones (solo se escribe; nunca se devuelve) ----
+  app.put('/api/organizador/meta-token', async (req) => {
+    const c = exigir(ctx, req, 'organizador.editar');
+    const { token } = z.object({ token: z.string().trim().regex(/^[A-Za-z0-9_-]{20,600}$/, 'El token de Meta no parece válido').nullable() }).parse(req.body);
+    await ctx.db.query('update organizadores set meta_capi_token_cifrado = $2 where id = $1', [c.organizadorId, token ? cifrar(ctx.config.SECRETO_DATOS, token) : null]);
+    await auditar(ctx.db, { organizadorId: c.organizadorId, usuarioId: c.usuarioId, accion: token ? 'meta.token' : 'meta.token_baja', entidad: 'organizador', entidadId: c.organizadorId, ip: req.ip });
+    return { meta_capi_activa: !!token };
   });
 
   // ---- Equipo ----

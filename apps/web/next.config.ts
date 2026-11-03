@@ -3,14 +3,15 @@ import type { NextConfig } from 'next';
 const API = process.env.API_URL ?? 'http://127.0.0.1:4000';
 const produccion = process.env.NODE_ENV === 'production';
 
-// Política de contenidos: solo recursos propios, las fuentes de Google y Turnstile de Cloudflare.
+// Política de contenidos: solo recursos propios, las fuentes de Google, Turnstile de Cloudflare
+// y el píxel de Meta (que solo se carga si la persona acepta las cookies de medición).
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob:",
-  "connect-src 'self'",
+  "img-src 'self' data: blob: https://www.facebook.com",
+  "connect-src 'self' https://www.facebook.com https://connect.facebook.net",
   "frame-src https://challenges.cloudflare.com",
   "worker-src 'self'",
   "base-uri 'self'",

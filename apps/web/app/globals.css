@@ -255,3 +255,10 @@ details.bloque>div{padding:0 12px 12px;display:grid;gap:10px}
 .fila-funcion{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
 .fila-funcion:first-child{border-top:0}
 @media (max-width:640px){.fila-funcion{grid-template-columns:1fr}}
+
+/* Aviso de cookies de medición (píxel de Meta) */
+.aviso-cookies{position:fixed;left:16px;right:16px;bottom:16px;z-index:90;max-width:760px;margin:0 auto;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:16px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.aviso-cookies-titulo{font-size:17px}
+.aviso-cookies-botones{gap:8px;flex-wrap:wrap}
+.aviso-cookies-botones .btn{min-width:120px}
+.enlace-boton{background:none;border:0;padding:0;font:inherit;color:var(--accent);text-decoration:underline;cursor:pointer;min-height:24px}
