@@ -57,3 +57,9 @@ La compra se abre siempre en Taquilla, en una pestaña nueva (así el pago y las
 ## Idiomas
 
 Web pública, compra, entradas, cuenta del cliente, widget y correo de confirmación en **español, inglés y alemán**. Las traducciones al inglés y al alemán están marcadas como **pendientes de revisión nativa** (`apps/web/lib/i18n.tsx`, `apps/api/src/servicios/plantillas.ts`). El panel interno está en español. Los textos legales y los nombres de las funciones están en el idioma en que se escribieron.
+
+## Meta (Facebook e Instagram)
+
+- **Píxel** (navegador): se configura en Panel → Datos del organizador → Meta. Eventos: `PageView`, `ViewContent`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase` (EUR, importe total con gastos de gestión, `content_ids` = identificador del evento).
+- **API de Conversiones** (servidor): trabajo `meta.compra` al confirmarse el pago → `POST {META_API_URL}/{pixel}/events` con el token en la cabecera `Authorization`. `META_API_URL` por defecto `https://graph.facebook.com/v23.0`; cuando Meta retire esa versión basta con cambiar la variable en Coolify.
+- Todo depende de que el comprador acepte las cookies de medición (ver D-063 y D-064).

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ProveedorIdioma, SelectorIdioma, useT } from '@/lib/i18n';
+import AvisoCookies, { EnlaceConfigurarCookies } from '@/componentes/AvisoCookies';
+import { recordarFbclid } from '@/lib/meta';
 
 function Buscador({ onBuscar, id }: { onBuscar?: () => void; id: string }) {
   const { t } = useT();
@@ -83,6 +85,7 @@ function Pie() {
         <Link href="/legal/privacidad">{t('privacidad')}</Link>
         <Link href="/legal/condiciones">{t('condiciones')}</Link>
         <Link href="/legal/cookies">{t('cookies')}</Link>
+        <EnlaceConfigurarCookies />
       </nav>
       <p style={{ marginTop: 10 }}>Taquilla · Grupo Livon</p>
       <p style={{ marginTop: 6 }}><Link href="/entrar" className="pie-equipo">Acceso del equipo</Link></p>
@@ -91,11 +94,13 @@ function Pie() {
 }
 
 export default function LayoutPublico({ children }: { children: React.ReactNode }) {
+  useEffect(recordarFbclid, []);
   return (
     <ProveedorIdioma>
       <Cabecera />
       <main id="contenido" className="wrap">{children}</main>
       <Pie />
+      <AvisoCookies />
     </ProveedorIdioma>
   );
 }

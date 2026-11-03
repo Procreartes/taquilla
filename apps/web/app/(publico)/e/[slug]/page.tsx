@@ -4,6 +4,7 @@ import { use, useEffect, useMemo, useState } from 'react';
 import { api, eur, fechaLarga } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import { accionFuncion } from '@/lib/funciones';
+import { rastrear, useDecisionCookies, usePixel } from '@/lib/meta';
 
 type Isla = { id: string; nombre: string; estado?: string; etiqueta?: string; colores: { base: string; acento: string; claro: string } };
 type Funcion = {
@@ -26,6 +27,11 @@ export default function Cartelera({ params }: { params: Promise<{ slug: string }
       if (g) setIsla(g);
     } catch {}
   }, [slug]);
+  usePixel(e?.meta_pixel_id);
+  const cookies = useDecisionCookies();
+  useEffect(() => {
+    if (e && cookies === 'si') rastrear(e.meta_pixel_id, 'ViewContent', { content_type: 'product', content_ids: [e.slug], content_name: e.nombre });
+  }, [e, cookies]);
   const islas: Isla[] = e?.islas ?? [];
   const porId = useMemo(() => Object.fromEntries(islas.map((i) => [i.id, i])), [islas]);
   const elegir = (i: string) => {

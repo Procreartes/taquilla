@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react';
 import { api, eur, fechaLarga } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 import EntradaMovil from '@/componentes/EntradaMovil';
+import { rastrearCompra, useDecisionCookies, usePixel } from '@/lib/meta';
 
 export default function Pedido({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -30,6 +31,14 @@ export default function Pedido({ params }: { params: Promise<{ token: string }> 
       vivo = false;
     };
   }, [token]);
+
+  usePixel(p?.meta_pixel_id);
+  const cookies = useDecisionCookies();
+  useEffect(() => {
+    // Solo justo después de pagar (no al abrir el enlace del correo días después).
+    if (!p || p.estado !== 'pagado' || cookies !== 'si' || !p.pagado_en || Date.now() - new Date(p.pagado_en).getTime() > 6 * 3600_000) return;
+    rastrearCompra(p.meta_pixel_id, { codigo: p.codigo, total_cent: p.total_cent, evento_slug: p.evento_slug, titulo: p.titulo, entradas: p.lineas?.length ?? 1 });
+  }, [p, cookies]);
 
   if (error) return <p className="aviso bad" role="alert">{error}</p>;
   if (!p) return <p role="status">{t('cargando')}</p>;

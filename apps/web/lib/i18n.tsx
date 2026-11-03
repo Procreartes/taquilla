@@ -101,6 +101,9 @@ const es = {
   destacado: 'Destacado', verEvento: 'Ver evento', sinResultados: 'No hay funciones que coincidan con tu búsqueda.', resultados: '{n} funciones',
   agendaSub: 'Todas las próximas funciones. Busca por nombre, artista, lugar o isla.', todo: 'Todo', otros: 'Otros', limpiar: 'Quitar filtros',
   sinEventos: 'Pronto anunciaremos nuevos eventos.', yMas: 'y {n} más', resultado1: '1 función',
+  cookiesTitulo: 'Cookies de medición',
+  cookiesTexto: 'El organizador de este evento usa el píxel de Meta (Facebook e Instagram) para saber qué anuncios funcionan. Solo lo activamos si lo aceptas; la compra funciona igual si lo rechazas.',
+  cookiesAceptar: 'Aceptar', cookiesRechazar: 'Rechazar', cookiesMas: 'Más información', cookiesConfigurar: 'Configurar cookies',
 } as const;
 
 export type Clave = keyof typeof es;
@@ -131,6 +134,9 @@ const en: Diccionario = {
   conflicto: 'We could not issue your tickets: the places became unavailable while you were paying. We are refunding the full amount.',
   errorGenerico: 'Something went wrong. Please try again.', ocupadas: 'Someone has just taken one of those seats. Please choose others.', cargando: 'Loading…',
   cuenta: 'My tickets', legal: 'Legal notice', privacidad: 'Privacy', condiciones: 'Terms of sale', cookies: 'Cookies',
+  cookiesTitulo: 'Measurement cookies',
+  cookiesTexto: 'The organiser of this event uses the Meta pixel (Facebook and Instagram) to see which ads work. We only turn it on if you accept; buying works the same if you decline.',
+  cookiesAceptar: 'Accept', cookiesRechazar: 'Decline', cookiesMas: 'More information', cookiesConfigurar: 'Cookie settings',
 };
 
 const de: Diccionario = {
@@ -159,6 +165,9 @@ const de: Diccionario = {
   conflicto: 'Wir konnten deine Tickets nicht ausstellen: Die Plätze waren während der Zahlung nicht mehr verfügbar. Wir erstatten den vollen Betrag.',
   errorGenerico: 'Etwas ist schiefgelaufen. Bitte versuche es erneut.', ocupadas: 'Jemand hat gerade einen dieser Plätze gewählt. Bitte wähle andere.',
   cargando: 'Wird geladen…', cuenta: 'Meine Tickets', legal: 'Impressum', privacidad: 'Datenschutz', condiciones: 'Verkaufsbedingungen', cookies: 'Cookies',
+  cookiesTitulo: 'Mess-Cookies',
+  cookiesTexto: 'Der Veranstalter nutzt das Meta-Pixel (Facebook und Instagram), um zu sehen, welche Anzeigen wirken. Wir aktivieren es nur, wenn du zustimmst; der Kauf funktioniert auch ohne.',
+  cookiesAceptar: 'Akzeptieren', cookiesRechazar: 'Ablehnen', cookiesMas: 'Mehr erfahren', cookiesConfigurar: 'Cookie-Einstellungen',
 };
 
 export const IDIOMAS = { es: { nombre: 'Español', locale: 'es-ES', d: es as Diccionario }, en: { nombre: 'English', locale: 'en-GB', d: en }, de: { nombre: 'Deutsch', locale: 'de-DE', d: de } };

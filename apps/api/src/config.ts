@@ -57,6 +57,8 @@ const Esquema = z.object({
   // Turnstile (Cloudflare)
   TURNSTILE_SECRET: opcional,
   TURNSTILE_SITE_KEY: opcional,
+  // Meta: API de Conversiones (el píxel y el token se configuran por organizador en el panel)
+  META_API_URL: z.string().url().default('https://graph.facebook.com/v23.0'),
   // Microsoft Entra ID (Microsoft 365) para el equipo interno
   // Entrada desde el portal de Grupo Livon (pase firmado HS256; misma clave que TAQUILLA_SSO_SECRET del portal)
   PORTAL_SSO_SECRET: z.preprocess(vacioAUndefined, z.string().min(32, 'PORTAL_SSO_SECRET: mínimo 32 caracteres').optional()),

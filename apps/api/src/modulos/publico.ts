@@ -13,6 +13,7 @@ import { facturaHtml } from '../servicios/factura';
 import { llavesEntradas, pdfEntradas } from '../servicios/entradas';
 import { DOCUMENTOS_LEGALES, plantillaLegal } from '../servicios/legal';
 
+const COOKIE_FB = z.string().max(500).regex(/^fb\.\d\.\d+\.[\w.-]+$/);
 const uuid = z.string().uuid();
 
 const CAMPOS_FUNCION_PUBLICA = `f.id, f.codigo, f.titulo, f.artistas, f.programa, f.es_gala, f.edad_minima, f.nota, f.fecha, to_char(f.hora, 'HH24:MI') as hora,
@@ -67,7 +68,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     const { slug } = z.object({ slug: z.string().max(80) }).parse(req.params);
     const e = await ctx.db.one(
       `select e.id, e.slug, e.nombre, e.tipo, e.categoria, e.descripcion, e.imagen_url, e.imagen_tarjeta_url, e.imagen_destacada_url, e.datos->'islas' as islas, e.es_prueba,
-              o.nombre as organizador_nombre, o.color_primario, o.logo_url, o.gastos_gestion_cent, o.gastos_gestion_pct
+              o.nombre as organizador_nombre, o.color_primario, o.logo_url, o.gastos_gestion_cent, o.gastos_gestion_pct, o.meta_pixel_id
          from eventos e join organizadores o on o.id = e.organizador_id and o.activo where e.slug = $1 and e.publicado`,
       [slug],
     );
@@ -91,7 +92,7 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
     const f = await ctx.db.one<any>(
       `select ${CAMPOS_FUNCION_PUBLICA}, f.version_plano_id, f.vendidas_general, e.slug as evento_slug, e.nombre as evento_nombre, e.datos->'islas' as islas,
               e.imagen_url as evento_imagen_url, e.imagen_tarjeta_url as evento_imagen_tarjeta_url,
-              o.nombre as organizador_nombre, o.slug as organizador_slug, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales,
+              o.nombre as organizador_nombre, o.slug as organizador_slug, o.gastos_gestion_cent, o.gastos_gestion_pct, o.max_entradas_pedido, o.impuesto_nombre, o.impuesto_tipo, o.textos_legales, o.meta_pixel_id,
               v.receta as plano
          from funciones f join recintos r on r.id = f.recinto_id join eventos e on e.id = f.evento_id and e.publicado
          join organizadores o on o.id = f.organizador_id left join versiones_plano v on v.id = f.version_plano_id
@@ -208,9 +209,17 @@ export async function rutasPublico(app: FastifyInstance, ctx: Contexto) {
       idioma: z.enum(['es', 'en', 'de']).default('es'),
       consentimientos: z.object({
         condiciones: z.boolean(), privacidad: z.boolean(), comunicacionesOrganizador: z.boolean().optional(), comunicacionesPlataforma: z.boolean().optional(),
+        // Cookies de medición de Meta aceptadas en el aviso de cookies
+        medicion: z.boolean().optional(),
       }),
+      // Cookies del píxel de Meta (_fbp/_fbc); solo se usan si «medicion» es true
+      // (si algo no cuadra se ignora: nunca debe impedir una compra)
+      meta: z.object({ fbp: COOKIE_FB.optional().catch(undefined), fbc: COOKIE_FB.optional().catch(undefined) }).optional().catch(undefined),
     }).parse(req.body);
-    return prepararPago(ctx, token, d);
+    const atribucion = d.consentimientos.medicion
+      ? { ...d.meta, ip: req.ip, ua: String(req.headers['user-agent'] ?? '').slice(0, 400) }
+      : null;
+    return prepararPago(ctx, token, d, atribucion);
   });
 }
 

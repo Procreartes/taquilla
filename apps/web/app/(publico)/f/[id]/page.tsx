@@ -5,6 +5,7 @@
  */
 import Link from 'next/link';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { datosMedicion, rastrear, useDecisionCookies, usePixel } from '@/lib/meta';
 import { gastosPorEntrada, generar, type Asiento } from '@taquilla/dominio';
 import PlanoSvg, { type EstadoButaca } from '@/componentes/PlanoSvg';
 import { api, eur, fechaLarga } from '@/lib/api';
@@ -31,6 +32,11 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
   const [antibots, setAntibots] = useState('');
   const recibirPase = useCallback((p: string) => setPase(p), []);
 
+  usePixel(f?.meta_pixel_id);
+  const cookies = useDecisionCookies();
+  useEffect(() => {
+    if (f && cookies === 'si') rastrear(f.meta_pixel_id, 'ViewContent', { content_type: 'product', content_ids: [f.evento_slug], content_name: f.titulo });
+  }, [f, cookies]);
   const cargarDisp = useCallback(() => api(`/api/publico/funciones/${id}/disponibilidad`).then(setDisp).catch(() => {}), [id]);
   useEffect(() => {
     api(`/api/publico/funciones/${id}`).then(setF).catch((e) => setError(e.message));
@@ -79,6 +85,9 @@ export default function FichaFuncion({ params }: { params: Promise<{ id: string 
         sessionStorage.setItem('reserva:' + id, r.token);
       } catch {}
       setReserva(r);
+      rastrear(f?.meta_pixel_id, 'InitiateCheckout', {
+        currency: 'EUR', value: r.total_cent / 100, num_items: r.lineas?.length ?? 1, content_type: 'product', content_ids: [f?.evento_slug], content_name: f?.titulo,
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
       if (e.codigo === 'sin_pase') {
@@ -256,8 +265,10 @@ function Paso2({ reserva, f, onVolver }: { reserva: any; f: any; onVolver: () =>
     if (!c.condiciones || !c.privacidad) return setError(`${t('aceptoCondiciones')} · ${t('aceptoPrivacidad')}`);
     setOcupado(true);
     try {
+      const { medicion, meta } = datosMedicion();
+      rastrear(f.meta_pixel_id, 'AddPaymentInfo', { currency: 'EUR', value: reserva.total_cent / 100, content_type: 'product', content_ids: [f.evento_slug] });
       const r = await api(`/api/publico/pedidos/${reserva.token}/pagar`, {
-        cuerpo: { ...d, telefono: d.telefono || null, idioma, consentimientos: c },
+        cuerpo: { ...d, telefono: d.telefono || null, idioma, consentimientos: { ...c, medicion }, ...(meta ? { meta } : {}) },
       });
       window.location.href = r.url;
     } catch (err: any) {

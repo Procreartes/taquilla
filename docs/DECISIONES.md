@@ -173,3 +173,11 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 - Funciones futuras como `previsto`; desde el día de la función, `reconocido`.
 - La sociedad se busca por el CIF del organizador; el proyecto, por el «Código de proyecto» del evento (si falta, el ingreso entra sin proyecto).
 - Las facturas simplificadas se quedan en la Taquilla (no se duplican en Livon Gestión).
+
+## 03/11/2026 · Píxel de Meta y API de Conversiones
+- **D-062 · Un píxel por organizador**, no uno de la plataforma: cada uno mide sus propios anuncios y los datos no se mezclan. El ID del píxel es público (lo necesita el navegador); el token de la API de Conversiones se guarda cifrado con `SECRETO_DATOS` y nunca se devuelve.
+- **D-063 · Consentimiento previo (LSSI art. 22.2, criterios AEPD)**: no se carga nada de Meta hasta pulsar «Aceptar». El aviso solo sale en páginas con píxel, no es modal y «Rechazar» pesa lo mismo que «Aceptar». La decisión se guarda en el navegador (`localStorage`), con versión para volver a preguntar si cambian las finalidades.
+- **D-064 · La API de Conversiones también depende del consentimiento**: el comprador manda `consentimientos.medicion`; sin él no se guardan IP, navegador ni cookies de Meta y no se envía nada. Con él, esos datos se borran del pedido en cuanto se envía (o se descarta) la compra; también si la reserva caduca.
+- **D-065 · Deduplicación** con `event_id = compra-<código del pedido>` en navegador y servidor. En el navegador la compra se marca en `localStorage` y solo se dispara en las 6 horas siguientes al pago (no al abrir el enlace del correo días después).
+- **D-066 · Funciones de prueba**: solo se mandan a Meta si el organizador tiene puesto un código de prueba (salen en «Probar eventos», no en las estadísticas). Un 4xx de Meta (token o píxel mal) se apunta en `pedidos.meta_respuesta` y no se reintenta; un 5xx o 429 lo reintenta la cola.
+- **D-067 · Las cookies `_fbp`/`_fbc` mal formadas se ignoran**: nunca deben impedir una compra.

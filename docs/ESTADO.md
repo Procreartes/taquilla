@@ -212,6 +212,25 @@
   4. Para cambiar algo después: en el evento, «Datos del evento e imágenes»; en la función, «Datos de la función e imágenes». Con entradas vendidas no se puede cambiar el recinto ni el tipo de venta.
 - Si el recinto no existe, se crea antes en **Recintos y planos**.
 
+## Píxel de Meta y API de Conversiones (03/11/2026)
+
+**Terminado**
+- Aviso de cookies de medición: solo aparece en las páginas de eventos cuyo organizador tiene píxel. «Aceptar» y «Rechazar» con el mismo peso; «Configurar cookies» en el pie para cambiar de opinión. Sin aceptar no se carga nada de Meta.
+- Píxel en el navegador, por organizador: `PageView` y `ViewContent` (evento y función), `InitiateCheckout` (al reservar), `AddPaymentInfo` (al ir a pagar) y `Purchase` (al confirmarse el pago, una sola vez por pedido).
+- API de Conversiones: al confirmarse el pago, el servidor manda la compra con el mismo identificador (`compra-<pedido>`), así Meta no la cuenta dos veces. Correo cifrado con SHA-256; IP, navegador y cookies `_fbp`/`_fbc` se borran del pedido en cuanto se envía.
+- Panel → Datos del organizador → «Meta (Facebook e Instagram)»: ID del píxel, código de prueba y token (se guarda cifrado y no se vuelve a mostrar).
+- Textos por defecto de cookies y privacidad actualizados (siguen siendo borradores para revisión legal).
+
+**Pendiente de datos reales**
+- ID del píxel y token de acceso de Dislate (los mete Naroe en el panel, no en el código).
+
+**Cómo probarlo**
+1. En el Administrador de eventos de Meta, abre el píxel → pestaña «Probar eventos» y copia el código (TEST…).
+2. En el panel: Datos del organizador → Meta → pon el ID del píxel y el código de prueba → «Guardar cambios». Pega el token → «Guardar token».
+3. Abre la página de un evento, pulsa «Aceptar» en el aviso de cookies y haz una compra de prueba.
+4. En «Probar eventos» deben salir PageView, ViewContent, InitiateCheckout, AddPaymentInfo y Purchase; la compra aparece una sola vez («Navegador y servidor», deduplicada).
+5. Cuando todo esté bien, borra el código de prueba y guarda.
+
 ## Para Naroe
 
 ### 1. Arrancarlo en tu ordenador (un solo comando)
