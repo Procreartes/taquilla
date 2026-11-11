@@ -196,6 +196,64 @@ export async function rutasOrganizadores(app: FastifyInstance, ctx: Contexto) {
     });
   });
 
+  // ---- Plataforma (superadmin): permisos de cada persona en todos los organizadores ----
+  // Quien entra por primera vez desde el portal recibe un rol en cada organizador; aquí se ajusta todo de una vez.
+  app.get('/api/plataforma/equipo', async (req) => {
+    exigirSuperadmin(ctx, req);
+    const organizadores = await ctx.db.query(`select id, nombre, es_prueba from organizadores where activo order by es_prueba, nombre`);
+    const personas = await ctx.db.query(
+      `select u.id, u.email, u.nombre, u.activo, u.superadmin, u.ultimo_acceso,
+              coalesce(jsonb_object_agg(m.organizador_id, m.rol) filter (where m.organizador_id is not null), '{}'::jsonb) as roles
+         from usuarios u left join membresias m on m.usuario_id = u.id
+        where not u.es_prueba
+        group by u.id order by u.activo desc, u.nombre`,
+    );
+    return { organizadores, personas };
+  });
+
+  app.put('/api/plataforma/equipo/:usuarioId', async (req) => {
+    const s = exigirSuperadmin(ctx, req);
+    const { usuarioId } = z.object({ usuarioId: z.string().uuid() }).parse(req.params);
+    const d = z.object({
+      activo: z.boolean(),
+      // organizador → rol, o null para quitarle el acceso a ese organizador
+      roles: z.record(z.string().uuid(), z.enum(ROLES).nullable()),
+    }).parse(req.body);
+    if (usuarioId === s.usuario.id && !d.activo) throw conflicto('No puedes desactivar tu propia cuenta');
+    return ctx.db.tx(async (t) => {
+      const u = await t.one<{ id: string; activo: boolean }>('select id, activo from usuarios where id = $1', [usuarioId]);
+      if (!u) throw noEncontrado('Persona');
+      const antes = await t.query<{ organizador_id: string; rol: string }>('select organizador_id, rol from membresias where usuario_id = $1', [usuarioId]);
+      const tocados = new Set<string>();
+      for (const [organizadorId, rol] of Object.entries(d.roles)) {
+        const previo = antes.find((m) => m.organizador_id === organizadorId)?.rol ?? null;
+        if (previo === rol) continue;
+        tocados.add(organizadorId);
+        if (rol === null) {
+          await t.query('delete from membresias where usuario_id = $1 and organizador_id = $2', [usuarioId, organizadorId]);
+          await t.query('update sesiones set organizador_id = null where usuario_id = $1 and organizador_id = $2', [usuarioId, organizadorId]);
+        } else {
+          const org = await t.one('select 1 from organizadores where id = $1', [organizadorId]);
+          if (!org) throw noEncontrado('Organizador');
+          await t.query(
+            `insert into membresias (usuario_id, organizador_id, rol) values ($1, $2, $3)
+             on conflict (usuario_id, organizador_id) do update set rol = excluded.rol`,
+            [usuarioId, organizadorId, rol],
+          );
+        }
+        await auditar(t, { organizadorId, usuarioId: s.usuario.id, accion: rol === null ? 'equipo.baja' : 'equipo.rol', entidad: 'usuario', entidadId: usuarioId, datos: { rol, antes: previo }, ip: req.ip });
+      }
+      if (u.activo !== d.activo) {
+        await t.query('update usuarios set activo = $2 where id = $1', [usuarioId, d.activo]);
+        // Al desactivar, se cierran sus sesiones abiertas.
+        if (!d.activo) await t.query('delete from sesiones where usuario_id = $1', [usuarioId]);
+        await auditar(t, { usuarioId: s.usuario.id, accion: d.activo ? 'equipo.activar' : 'equipo.desactivar', entidad: 'usuario', entidadId: usuarioId, ip: req.ip });
+      }
+      for (const organizadorId of tocados) await comprobarQuedaAdmin(t, organizadorId);
+      return { ok: true };
+    });
+  });
+
   app.get('/api/organizador/mio', async (req) => {
     const s = sesionCompleta(ctx, req);
     if (!s.organizadorId) throw new ErrorHttp(400, 'Elige primero un organizador', 'sin_organizador');

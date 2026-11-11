@@ -4,12 +4,13 @@ import { usePathname } from 'next/navigation';
 import { ProveedorSesion, useSesion } from '@/lib/sesion';
 import { api } from '@/lib/api';
 
-const ENLACES: { href: string; texto: string; permiso?: string }[] = [
+const ENLACES: { href: string; texto: string; permiso?: string; superadmin?: boolean }[] = [
   { href: '/panel', texto: 'Resumen' },
   { href: '/panel/eventos', texto: 'Eventos', permiso: 'eventos.ver' },
   { href: '/panel/recintos', texto: 'Recintos y planos', permiso: 'recintos.ver' },
   { href: '/panel/organizador', texto: 'Organizador', permiso: 'organizador.editar' },
   { href: '/panel/equipo', texto: 'Equipo', permiso: 'equipo.gestionar' },
+  { href: '/panel/permisos', texto: 'Permisos', superadmin: true },
   { href: '/puerta', texto: 'Puerta', permiso: 'puerta.validar' },
   { href: '/panel/integraciones', texto: 'Integraciones', permiso: 'organizador.editar' },
   { href: '/panel/correos', texto: 'Correos de prueba', permiso: 'correos.ver' },
@@ -32,7 +33,7 @@ function Barra() {
     <header className="barra">
       <Link className="marca" href="/panel">Taquilla <span className="tag">Panel</span></Link>
       <nav aria-label="Panel">
-        {ENLACES.filter((e) => !e.permiso || puede(e.permiso)).map((e) => (
+        {ENLACES.filter((e) => (e.superadmin ? yo.usuario.superadmin : !e.permiso || puede(e.permiso))).map((e) => (
           <Link key={e.href} className="pill" href={e.href} aria-current={ruta === e.href || (e.href !== '/panel' && ruta.startsWith(e.href)) ? 'page' : undefined}>{e.texto}</Link>
         ))}
       </nav>

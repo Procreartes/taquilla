@@ -179,3 +179,4 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 - Si el correo del pase no tiene usuario, se crea al entrar (sin contraseña: entra por el portal o con Microsoft) con una membresía en cada organizador real y activo: rol `admin` si el pase trae `admin: true` (administración del portal) y `produccion` si no. Después se ajusta en Panel → Equipo.
 - Quien ya tiene usuario no cambia de roles. Un usuario desactivado aquí sigue sin poder entrar.
 - Sustituye a «No se crean usuarios desde el portal» (27/10/2026).
+- Naroe lo aprueba así (producción en todos) y pide poder cambiarlo: nueva página **Panel → Permisos** (solo superadmin) con una fila por persona y una columna por organizador (rol o «Sin acceso») y la casilla «Activa». `GET/PUT /api/plataforma/equipo`. No deja un organizador sin administración ni desactivarse a uno mismo; desactivar cierra sus sesiones.
