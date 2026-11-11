@@ -173,3 +173,10 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 - Funciones futuras como `previsto`; desde el día de la función, `reconocido`.
 - La sociedad se busca por el CIF del organizador; el proyecto, por el «Código de proyecto» del evento (si falta, el ingreso entra sin proyecto).
 - Las facturas simplificadas se quedan en la Taquilla (no se duplican en Livon Gestión).
+
+## 11/11/2026 · Alta automática al entrar desde el portal
+- Petición de Naroe: que cualquiera del equipo con permiso «Taquilla» en el portal pueda entrar sin que haya que darle de alta antes aquí.
+- Si el correo del pase no tiene usuario, se crea al entrar (sin contraseña: entra por el portal o con Microsoft) con una membresía en cada organizador real y activo: rol `admin` si el pase trae `admin: true` (administración del portal) y `produccion` si no. Después se ajusta en Panel → Equipo.
+- Quien ya tiene usuario no cambia de roles. Un usuario desactivado aquí sigue sin poder entrar.
+- Sustituye a «No se crean usuarios desde el portal» (27/10/2026).
+- Naroe lo aprueba así (producción en todos) y pide poder cambiarlo: nueva página **Panel → Permisos** (solo superadmin) con una fila por persona y una columna por organizador (rol o «Sin acceso») y la casilla «Activa». `GET/PUT /api/plataforma/equipo`. No deja un organizador sin administración ni desactivarse a uno mismo; desactivar cierra sus sesiones.

@@ -38,9 +38,30 @@ describe('entrada desde el portal de Grupo Livon', () => {
     expect((await m.cliente().post('/api/auth/portal', { pase })).statusCode).toBe(401);
   });
 
-  it('rechaza pases falsos y cuentas sin alta en la Taquilla', async () => {
+  it('rechaza pases falsos', async () => {
     expect((await m.cliente().post('/api/auth/portal', { pase: firmar({ email: 'produccion@taquilla.test' }, 'clave-falsa-pero-bastante-larga-0123456789') })).statusCode).toBe(401);
-    const r = await m.cliente().post('/api/auth/portal', { pase: firmar({ email: 'nadie@grupolivon.com', mfa: true }) });
+  });
+
+  it('da de alta al entrar a quien aún no tenía usuario: producción, o admin si es administración del portal', async () => {
+    const c = m.cliente();
+    const r = await c.post('/api/auth/portal', { pase: firmar({ email: 'Nueva.Persona@grupolivon.com', name: 'Nueva Persona', mfa: true }) });
+    expect(r.statusCode).toBe(200);
+    expect((await c.get('/api/auth/yo')).datos.completa).toBe(true);
+    const roles = await m.ctx.db.query<{ rol: string }>(
+      `select m.rol from membresias m join usuarios u on u.id = m.usuario_id join organizadores o on o.id = m.organizador_id
+        where u.email = 'nueva.persona@grupolivon.com' and o.activo and not o.es_prueba`);
+    const reales = await m.ctx.db.query(`select id from organizadores where activo and not es_prueba`);
+    expect(roles.length).toBe(reales.length);
+    expect(roles.every((x) => x.rol === 'produccion')).toBe(true);
+
+    await m.cliente().post('/api/auth/portal', { pase: firmar({ email: 'jefa@grupolivon.com', mfa: true, admin: true }) });
+    const rolesJefa = await m.ctx.db.query<{ rol: string }>(`select m.rol from membresias m join usuarios u on u.id = m.usuario_id where u.email = 'jefa@grupolivon.com'`);
+    expect(rolesJefa.every((x) => x.rol === 'admin')).toBe(true);
+  });
+
+  it('no deja entrar a un usuario desactivado en la Taquilla', async () => {
+    await m.ctx.db.query(`insert into usuarios (email, nombre, activo) values ('baja@grupolivon.com', 'Baja', false)`);
+    const r = await m.cliente().post('/api/auth/portal', { pase: firmar({ email: 'baja@grupolivon.com', mfa: true }) });
     expect(r.statusCode).toBe(403);
     expect(r.datos.mensaje).toContain('Equipo');
   });
