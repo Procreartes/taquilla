@@ -180,3 +180,8 @@ Cada decisión tomada sin poder consultar a Naroe: qué se decidió, por qué y 
 - Quien ya tiene usuario no cambia de roles. Un usuario desactivado aquí sigue sin poder entrar.
 - Sustituye a «No se crean usuarios desde el portal» (27/10/2026).
 - Naroe lo aprueba así (producción en todos) y pide poder cambiarlo: nueva página **Panel → Permisos** (solo superadmin) con una fila por persona y una columna por organizador (rol o «Sin acceso») y la casilla «Activa». `GET/PUT /api/plataforma/equipo`. No deja un organizador sin administración ni desactivarse a uno mismo; desactivar cierra sus sesiones.
+
+## Plano del Multicines Atlántida (11/11/2026)
+- El panel solo importa ficheros `plano-taquilla/1` (JSON); no lee PDF. El plano se ha pasado a receta a partir de la imagen que facilitó Naroe y se ha cargado en producción sobre la versión borrador v1 que ya existía (la anterior no seguía la numeración del papel: fila 20 de la 3 a la 12, pasillos y laterales del anfiteatro).
+- 710 butacas + 2 PMR. Cada bloque con su código interno (PATIO, FONDO, FONDO28, ANFLAT, ANF) para que el dibujo salga centrado.
+- Supuesto: acompañante PMR en la fila 20, butaca 3. Zonas sin precio orientativo: el precio se fija en cada función.

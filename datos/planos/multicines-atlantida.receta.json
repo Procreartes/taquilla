@@ -1,0 +1,160 @@
+{
+  "id": "multicines-atlantida",
+  "nombre": "Aforo completo",
+  "recinto": "Multicines Atlántida · Lanzarote",
+  "fuente": "Plano «Sala Teatro · Patio de butacas y Anfiteatro» facilitado por Naroe Valls (11/11/2026)",
+  "notas": "Numeración del 1 desde la derecha del espectador. Patio: filas 1-19 de 26 butacas con pasillo central y pasillo transversal tras la fila 8; filas 20-28 más estrechas al fondo. Fila 20: las posiciones 1 y 2 son los 2 espacios PMR (en amarillo en el plano). Anfiteatro: filas 1-6 en los laterales de la herradura, 7-10 de 18 y 11 de 24. Supuesto: la butaca F-20-3 (fila 20, butaca 3) se marca como acompañante PMR.",
+  "aforo": {
+    "butacas": 710,
+    "pmr": 2
+  },
+  "zonas": [
+    {
+      "codigo": "patio",
+      "nombre": "Patio de butacas",
+      "color": "#2469b0"
+    },
+    {
+      "codigo": "anfiteatro",
+      "nombre": "Anfiteatro",
+      "color": "#b06a1e"
+    }
+  ],
+  "bloques": [
+    {
+      "id": "patio",
+      "nombre": "Patio de butacas (filas 1-19)",
+      "codigo": "PATIO",
+      "desde": 1,
+      "hasta": 19,
+      "prefijo": "F-",
+      "butacas": 26,
+      "numeracion": "derecha",
+      "pasilloCentral": 120,
+      "pasillos": "8",
+      "tramos": [
+        {
+          "desde": 1,
+          "hasta": 19,
+          "zona": "patio"
+        }
+      ]
+    },
+    {
+      "id": "fondo",
+      "nombre": "Patio de butacas (filas 20-27)",
+      "codigo": "FONDO",
+      "desde": 20,
+      "hasta": 27,
+      "prefijo": "F-",
+      "butacas": 10,
+      "numeracion": "derecha",
+      "pasilloCentral": 120,
+      "excepciones": [
+        {
+          "fila": 20,
+          "butacas": 12
+        },
+        {
+          "fila": 21,
+          "butacas": 12
+        },
+        {
+          "fila": 25,
+          "butacas": 8
+        }
+      ],
+      "pmr": [
+        {
+          "fila": 20,
+          "sustituye": "1, 2",
+          "cantidad": 2
+        }
+      ],
+      "tramos": [
+        {
+          "desde": 20,
+          "hasta": 27,
+          "zona": "patio"
+        }
+      ]
+    },
+    {
+      "id": "f28",
+      "nombre": "Patio de butacas (fila 28)",
+      "codigo": "FONDO28",
+      "desde": 28,
+      "hasta": 28,
+      "prefijo": "F-",
+      "butacas": 12,
+      "numeracion": "derecha",
+      "tramos": [
+        {
+          "desde": 28,
+          "hasta": 28,
+          "zona": "patio"
+        }
+      ]
+    },
+    {
+      "id": "anfilat",
+      "nombre": "Anfiteatro (laterales, filas 1-6)",
+      "codigo": "ANFLAT",
+      "desde": 1,
+      "hasta": 6,
+      "prefijo": "A-",
+      "butacas": 2,
+      "numeracion": "derecha",
+      "pasilloCentral": 700,
+      "excepciones": [
+        {
+          "fila": 4,
+          "butacas": 4
+        },
+        {
+          "fila": 5,
+          "butacas": 8
+        },
+        {
+          "fila": 6,
+          "butacas": 10
+        }
+      ],
+      "tramos": [
+        {
+          "desde": 1,
+          "hasta": 6,
+          "zona": "anfiteatro"
+        }
+      ]
+    },
+    {
+      "id": "anficen",
+      "nombre": "Anfiteatro (filas 7-11)",
+      "codigo": "ANF",
+      "desde": 7,
+      "hasta": 11,
+      "prefijo": "A-",
+      "butacas": 18,
+      "numeracion": "derecha",
+      "excepciones": [
+        {
+          "fila": 11,
+          "butacas": 24
+        }
+      ],
+      "tramos": [
+        {
+          "desde": 7,
+          "hasta": 11,
+          "zona": "anfiteatro"
+        }
+      ]
+    }
+  ],
+  "ajustes": {
+    "FONDO-F20-3": {
+      "tipo": "acompanante"
+    }
+  }
+}
