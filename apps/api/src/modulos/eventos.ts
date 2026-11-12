@@ -201,12 +201,27 @@ export async function importarProgramacion(t: Consultor, organizadorId: string, 
 export async function rutasEventos(app: FastifyInstance, ctx: Contexto) {
   app.get('/api/eventos', async (req) => {
     const c = exigir(ctx, req, 'eventos.ver');
+    // Datos para las tarjetas del panel: cartel, estado, próxima función y ocupación de lo que queda por celebrar.
+    const hoy = `(now() at time zone 'Atlantic/Canary')::date`;
     return ctx.db.query(
-      `select e.id, e.slug, e.nombre, e.tipo, e.publicado, e.es_prueba,
-              count(f.id)::int as funciones, min(f.fecha) as desde, max(f.fecha) as hasta,
-              count(f.id) filter (where f.estado = 'a_la_venta')::int as a_la_venta
-         from eventos e left join funciones f on f.evento_id = e.id
-        where e.organizador_id = $1 group by e.id order by min(f.fecha) nulls last, e.nombre`,
+      `with fx as (
+         select f.evento_id, f.fecha, f.estado,
+                case when f.modo_venta = 'numerada' then (v.comprobacion->>'vend')::int else f.aforo end as plazas,
+                (select count(*)::int from entradas x where x.funcion_id = f.id and x.estado in ('valida', 'usada') and x.tipo_entrada = 'venta') as vendidas,
+                (select count(*)::int from entradas x where x.funcion_id = f.id and x.estado in ('valida', 'usada') and x.tipo_entrada <> 'venta') as invitaciones
+           from funciones f left join versiones_plano v on v.id = f.version_plano_id
+          where f.organizador_id = $1)
+       select e.id, e.slug, e.nombre, e.tipo, e.categoria, e.publicado, e.destacado, e.es_prueba,
+              e.imagen_url, e.imagen_tarjeta_url,
+              count(fx.evento_id)::int as funciones, min(fx.fecha) as desde, max(fx.fecha) as hasta,
+              count(fx.evento_id) filter (where fx.estado = 'a_la_venta')::int as a_la_venta,
+              min(fx.fecha) filter (where fx.fecha >= ${hoy} and fx.estado <> 'cancelada') as proxima,
+              coalesce(sum(fx.plazas) filter (where fx.fecha >= ${hoy} and fx.estado <> 'cancelada'), 0)::int as plazas,
+              coalesce(sum(fx.vendidas) filter (where fx.fecha >= ${hoy} and fx.estado <> 'cancelada'), 0)::int as vendidas,
+              coalesce(sum(fx.invitaciones) filter (where fx.fecha >= ${hoy} and fx.estado <> 'cancelada'), 0)::int as invitaciones,
+              coalesce(sum(fx.vendidas), 0)::int as vendidas_total
+         from eventos e left join fx on fx.evento_id = e.id
+        where e.organizador_id = $1 group by e.id order by min(fx.fecha) nulls last, e.nombre`,
       [c.organizadorId],
     );
   });
