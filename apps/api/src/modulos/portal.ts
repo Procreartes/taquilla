@@ -1,7 +1,9 @@
 /**
  * Entrada desde el portal de Grupo Livon (portal.grupolivon.com).
  * El portal ya identificó a la persona con Microsoft 365 y nos manda un pase firmado (JWT HS256, 2 minutos, un solo uso).
- * La Taquilla solo deja entrar a quien ya tenga usuario activo aquí: los permisos de cada organizador se siguen dando en «Equipo».
+ * Si la persona aún no tiene usuario aquí, se le crea al entrar (el portal ya decidió que puede usar la Taquilla):
+ * rol «admin» si es administración del portal y «produccion» si no, en cada organizador real activo.
+ * Después, los roles se ajustan en «Equipo». Un usuario desactivado aquí sigue sin poder entrar.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
@@ -11,7 +13,7 @@ import { crearSesion } from '../auth';
 import { ErrorHttp } from '../errores';
 import { auditar } from '../auditoria';
 
-export type DatosPase = { email: string; nombre: string; mfa: boolean; destino: string | null; jti: string };
+export type DatosPase = { email: string; nombre: string; mfa: boolean; admin: boolean; destino: string | null; jti: string };
 
 const DESTINO = /^\/(panel|puerta)(\/[A-Za-z0-9/_-]*)?$/;
 
@@ -50,9 +52,30 @@ export function verificarPase(token: string, secreto: string, ahora = Date.now()
     email,
     nombre: String(d.name ?? '').slice(0, 200),
     mfa: d.mfa === true,
+    admin: d.admin === true,
     destino: typeof d.destino === 'string' && DESTINO.test(d.destino) ? d.destino : null,
     jti: d.jti,
   };
+}
+
+/** Primera entrada desde el portal: crea el usuario (sin contraseña: entra por el portal o con Microsoft) y sus membresías. */
+async function altaDesdePortal(ctx: Contexto, d: DatosPase, ip: string) {
+  const nombre = d.nombre.trim() || d.email.split('@')[0];
+  const nuevo = await ctx.db.one<{ id: string; totp_activo: boolean; activo: boolean }>(
+    `insert into usuarios (email, nombre) values ($1, $2)
+     on conflict (email) do update set email = excluded.email
+     returning id, totp_activo, activo`,
+    [d.email, nombre],
+  );
+  const rol = d.admin ? 'admin' : 'produccion';
+  await ctx.db.query(
+    `insert into membresias (usuario_id, organizador_id, rol)
+     select $1, id, $2 from organizadores where activo and not es_prueba
+     on conflict do nothing`,
+    [nuevo!.id, rol],
+  );
+  await auditar(ctx.db, { usuarioId: nuevo!.id, accion: 'equipo.alta_desde_portal', datos: { email: d.email, rol }, ip });
+  return nuevo!;
 }
 
 export async function rutasPortal(app: FastifyInstance, ctx: Contexto) {
@@ -74,11 +97,12 @@ export async function rutasPortal(app: FastifyInstance, ctx: Contexto) {
     const nuevo = await ctx.db.one('insert into pases_portal (jti, email) values ($1, $2) on conflict do nothing returning jti', [d.jti, d.email]);
     if (!nuevo) throw new ErrorHttp(401, 'Este pase ya se usó. Vuelve a pulsar «Taquilla» en el portal.', 'pase_usado');
 
-    const u = await ctx.db.one<{ id: string; totp_activo: boolean }>('select id, totp_activo from usuarios where email = $1 and activo', [d.email]);
-    if (!u) {
-      await auditar(ctx.db, { accion: 'auth.portal_sin_alta', datos: { email: d.email }, ip: req.ip });
-      throw new ErrorHttp(403, `Tu cuenta (${d.email}) aún no tiene acceso a la Taquilla. Pide a administración que te añada en Panel → Equipo.`, 'sin_alta');
+    let u = await ctx.db.one<{ id: string; totp_activo: boolean; activo: boolean }>('select id, totp_activo, activo from usuarios where email = $1', [d.email]);
+    if (u && !u.activo) {
+      await auditar(ctx.db, { usuarioId: u.id, accion: 'auth.portal_desactivado', ip: req.ip });
+      throw new ErrorHttp(403, `Tu cuenta (${d.email}) está desactivada en la Taquilla. Pide a administración que la active en Panel → Equipo.`, 'desactivado');
     }
+    if (!u) u = await altaDesdePortal(ctx, d, req.ip);
     // Si entró en el portal con Microsoft 365, su verificación en dos pasos vale también aquí.
     await crearSesion(ctx, req, reply, u.id, d.mfa || !u.totp_activo);
     await auditar(ctx.db, { usuarioId: u.id, accion: 'auth.entrar_portal', datos: { mfa: d.mfa }, ip: req.ip });

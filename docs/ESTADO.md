@@ -212,6 +212,11 @@
   4. Para cambiar algo después: en el evento, «Datos del evento e imágenes»; en la función, «Datos de la función e imágenes». Con entradas vendidas no se puede cambiar el recinto ni el tipo de venta.
 - Si el recinto no existe, se crea antes en **Recintos y planos**.
 
+## Entrada desde el portal y permisos del equipo (11/11/2026)
+- **Terminado.** Quien entra por primera vez desde el portal (tarjeta «Taquilla») ya no recibe «pide que te añadan»: se le crea el usuario con rol Producción en cada organizador real (Administración si es administración del portal).
+- **Panel → Permisos** (solo superadmin): una fila por persona y una columna por organizador. Se cambia el rol o se pone «Sin acceso», se marca o desmarca «Activa» y se pulsa «Guardar» en esa fila.
+- Cómo probarlo: entra desde el portal con una cuenta que no estuviera en la Taquilla → entra directa al panel. Luego, con tu cuenta, ve a **Panel → Permisos** y cámbiale el rol.
+
 ## Lista de eventos más visual (12/11/2026)
 
 **Terminado**: Panel → **Eventos** enseña cada espectáculo como una tarjeta con su cartel, estado (A la venta, Publicado, Borrador, Prueba, Celebrado), próxima función y una barra de vendidas e invitaciones sobre las plazas de las funciones que quedan.
