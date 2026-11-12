@@ -217,6 +217,15 @@
 - **Panel → Permisos** (solo superadmin): una fila por persona y una columna por organizador. Se cambia el rol o se pone «Sin acceso», se marca o desmarca «Activa» y se pulsa «Guardar» en esa fila.
 - Cómo probarlo: entra desde el portal con una cuenta que no estuviera en la Taquilla → entra directa al panel. Luego, con tu cuenta, ve a **Panel → Permisos** y cámbiale el rol.
 
+## Lista de eventos más visual (12/11/2026)
+
+**Terminado**: Panel → **Eventos** enseña cada espectáculo como una tarjeta con su cartel, estado (A la venta, Publicado, Borrador, Prueba, Celebrado), próxima función y una barra de vendidas e invitaciones sobre las plazas de las funciones que quedan.
+
+- **Cambios rápidos sin entrar en la ficha**: «Publicado en la web / Sin publicar» y «Destacado en portada / Destacar en portada». Además, accesos a Editar, Informe y Ver en la web.
+- **Filtros**: En marcha (por defecto), Celebrados, Sin publicar y Todos, con buscador por nombre o tipo.
+- **Dos vistas**: Tarjetas (cartel grande) o Lista (tabla compacta con miniatura). El panel recuerda la última elegida en ese navegador.
+- **Cómo probarlo**: arranca la demo, entra como «Gerencia ASOMBRA (prueba)» y abre **Eventos**. Pulsa «Destacar en portada», recarga y verás que se ha guardado.
+
 ## Para Naroe
 
 ### 1. Arrancarlo en tu ordenador (un solo comando)
